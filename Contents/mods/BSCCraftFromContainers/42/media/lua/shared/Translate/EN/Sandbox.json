@@ -1,0 +1,9 @@
+{
+  "Sandbox_BSCCraft": "Craft From Containers",
+  "Sandbox_BSCCraft_BaseArea": "Craft from the base area",
+  "Sandbox_BSCCraft_BaseArea_tooltip": "While standing inside the Base Stock Counter area, crafting can use explored containers anywhere in it, on every floor.",
+  "Sandbox_BSCCraft_NearbyRadius": "Nearby radius",
+  "Sandbox_BSCCraft_NearbyRadius_tooltip": "Crafting can use explored containers up to this many squares away, on the same floor and in the same building. 0 turns it off.",
+  "Sandbox_BSCCraft_MaxBaseContainers": "Base container limit",
+  "Sandbox_BSCCraft_MaxBaseContainers_tooltip": "Most base containers offered to crafting at once, closest first. Lower it if the crafting window gets slow."
+}
