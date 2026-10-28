@@ -1,0 +1,14 @@
+{
+  "IGUI_BSCCraft_Kept": "Alguns itens não puderam voltar aos containers e ficaram no seu inventário",
+  "IGUI_BSCCraft_Fetch_invalid": "Craft cancelado: o servidor recusou o pedido",
+  "IGUI_BSCCraft_Fetch_unloaded": "Craft cancelado: essa parte da base não está carregada no servidor",
+  "IGUI_BSCCraft_Fetch_missing": "Craft cancelado: um item não está mais no container",
+  "IGUI_BSCCraft_Fetch_far": "Craft cancelado: um container está fora de alcance",
+  "IGUI_BSCCraft_Fetch_locked": "Craft cancelado: um container está trancado",
+  "IGUI_BSCCraft_Fetch_safehouse": "Craft cancelado: um container está numa safehouse que você não pode saquear",
+  "IGUI_BSCCraft_Fetch_heavy": "Craft cancelado: você não consegue carregar os itens",
+  "IGUI_BSCCraft_Fetch_rate": "Craft cancelado: pedidos demais, tente de novo",
+  "IGUI_BSCCraft_Fetch_timeout": "Craft cancelado: o servidor não respondeu a tempo",
+  "IGUI_BSCCraft_Fetch_many": "Craft cancelado: itens demais vindos de outros containers",
+  "IGUI_BSCCraft_Fetch_error": "Craft cancelado: o Craft From Containers teve um erro, veja o log"
+}
