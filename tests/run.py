@@ -116,6 +116,46 @@ class ModTests(unittest.TestCase):
             assert(#near==3 and near[1].i==2 and near[2].i==4 and near[3].i==3)
         ''')
 
+    def test_finder_scans_the_base_with_access_rules(self):
+        self.check('''
+            local F=require "BSCCraft/Finder"
+            SandboxVars.BSCCraft.NearbyRadius=0
+            ISHandCraftPanel={}
+            local area={x1=0,y1=0,x2=19,y2=19}
+            clientArea(area)
+            local p=makePlayer(5,5,0); players[0]=p; makeSquare(5,5,0,"home")
+            crate(makeSquare(6,5,0,"home"),{name="near"})
+            crate(makeSquare(18,18,1,"home"),{name="attic"})
+            crate(makeSquare(19,3,-1,"home"),{name="basement"})
+            crate(makeSquare(25,25,0,"home"),{name="outside"})
+            crate(makeSquare(10,10,0,"home"),{name="unexplored",explored=false})
+            crate(makeSquare(11,10,0,"home"),{name="locked",class="IsoThumpable",locked=true})
+            crate(makeSquare(11,11,0,"home"),{name="unlocked",class="IsoThumpable"})
+            local denied=makeSquare(12,12,0,"home"); crate(denied,{name="denied"}); safehouse(12,12,{})
+            local member=makeSquare(13,12,0,"home"); crate(member,{name="member"}); safehouse(13,12,{[p]=true})
+            crate(makeSquare(14,14,0,"home"),{name="corpse",class="IsoDeadBody"})
+            crate(makeSquare(15,14,0,"home"),{name="car",class="BaseVehicle"})
+            -- Nothing is scanned until crafting asks for containers.
+            for i=1,50 do time=time+100; F.tick() end
+            assert(not F.scan and #F.result.list==0)
+            assert(#F.extra(p)==0)
+            scanAll(F)
+            assert(names(F.result.list)=="near,unlocked,member,attic,basement","got "..names(F.result.list))
+            assert(ISHandCraftPanel.drawDirty)
+            assert(names(F.extra(p))=="near,unlocked,member,attic,basement")
+            -- An unchanged rescan does not dirty the crafting UI again.
+            ISHandCraftPanel.drawDirty=false
+            time=time+3000; scanAll(F)
+            assert(not ISHandCraftPanel.drawDirty)
+            -- A second local player gets the access checks again.
+            local guest=makePlayer(6,6,0,"guest"); makeSquare(6,6,0,"home")
+            assert(names(F.extra(guest))=="near,unlocked,attic,basement")
+            -- Leaving the area drops the base list.
+            makeSquare(30,30,0); p.x=30; p.y=30
+            F.tick()
+            assert(#F.result.list==0 and #F.extra(p)==0)
+        ''')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
