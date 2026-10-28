@@ -205,6 +205,62 @@ class ModTests(unittest.TestCase):
             assert(#F.extra(p)==0)
         ''')
 
+    def test_hooks_extend_only_inside_crafting_entry_points(self):
+        self.check('''
+            local F=require "BSCCraft/Finder"
+            local H=require "BSCCraft/Hooks"
+            SandboxVars.BSCCraft={BaseArea=true,NearbyRadius=0}
+            clientArea({x1=0,y1=0,x2=9,y2=9})
+            local p=makePlayer(1,1,0); players[0]=p; makeSquare(1,1,0)
+            local own=crate(makeSquare(2,1,0),{name="adjacent"})
+            local far=crate(makeSquare(9,9,0),{name="far"})
+            local gone=crate(makeSquare(8,9,0),{name="gone"})
+            vanillaUI({own})
+            ISHandCraftPanel={updateContainers=function(self)
+                self.seen=ISInventoryPaneContextMenu.getContainers(p)
+                return "a",nil,"c"
+            end}
+            local native=function(self) error("native failure") end
+            local remoteItem=put(far,makeItem("Base.Plank"))
+            local nearItem=put(own,makeItem("Base.Plank"))
+            ISWidgetHandCraftControl={startHandcraft=function(self,fail)
+                ISInventoryPaneContextMenu.transferIfNeeded(p,remoteItem)
+                ISInventoryPaneContextMenu.transferIfNeeded(p,nearItem)
+                ISCraftingUI.ReturnItemsToOriginalContainer(p,{remoteItem,nearItem})
+                if fail then native(self) end
+            end}
+            local original=ISWidgetHandCraftControl.startHandcraft
+            H.install(); H.install()
+            local panel={}
+            ISHandCraftPanel.updateContainers(panel)
+            scanAll(F)
+            removeObject(gone)
+            local a,b,c=ISHandCraftPanel.updateContainers(panel)
+            assert(a=="a" and b==nil and c=="c")
+            assert(select("#",ISHandCraftPanel.updateContainers(panel))==3)
+            assert(panel.seen:size()==3 and panel.seen:get(0)==p:getInventory() and panel.seen:get(1)==own and panel.seen:get(2)==far)
+            -- Transfers, healing and every other caller keep vanilla reach.
+            assert(ISInventoryPaneContextMenu.getContainers(p):size()==2)
+            -- Inside a craft start, remote items are left to the server fetch; adjacent ones stay vanilla.
+            transferred=nil; givenBack=nil
+            ISWidgetHandCraftControl.startHandcraft({})
+            assert(#transferred==1 and transferred[1]==nearItem)
+            assert(#givenBack==1 and givenBack[1]==nearItem)
+            transferred=nil
+            ISInventoryPaneContextMenu.transferIfNeeded(p,remoteItem)
+            assert(#transferred==1 and transferred[1]==remoteItem)
+            -- A native error propagates unchanged and the scope cannot leak.
+            -- Compared with the unwrapped error: Kahlua's test platform words some messages differently.
+            local _,expected=pcall(original,{},true)
+            local ok,err=pcall(ISWidgetHandCraftControl.startHandcraft,{},true)
+            assert(not ok and err==expected and H.depth==0)
+            assert(ISInventoryPaneContextMenu.getContainers(p):size()==2)
+            -- An addon failure returns the vanilla list and turns the extension off.
+            F.extra=function() error("addon failure") end
+            ISHandCraftPanel.updateContainers(panel)
+            assert(panel.seen:size()==2 and H.disabled)
+        ''')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
