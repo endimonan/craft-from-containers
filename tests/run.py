@@ -284,6 +284,85 @@ class ModTests(unittest.TestCase):
             assert(R.token("abc") and not R.token("") and not R.token(string.rep("a",65)) and not R.token(5))
         ''')
 
+    def test_service_fetch_checks_everything_before_moving(self):
+        self.check('''
+            isServer=function() return true end
+            local S=require "BSCCraft/Service"
+            SandboxVars.BSCCraft={BaseArea=true,NearbyRadius=4}
+            serverArea({x1=0,y1=0,x2=19,y2=19})
+            local p=makePlayer(5,5,0)
+            local attic=crate(makeSquare(18,18,1),{name="attic"})
+            local wood=put(attic,makeItem("Base.Plank",{weight=2}))
+            local saw=put(attic,makeItem("Base.Saw",{weight=1}))
+            local function entry(container,item,o,c,t)
+                local obj=container.parent
+                return {x=obj.square.x,y=obj.square.y,z=obj.square.z,o=o or obj:getObjectIndex(),
+                    c=c or obj:getContainerIndex(container),t=t or container.type,id=item.id}
+            end
+            local n=0
+            local function fetch(items,player)
+                n=n+1; time=time+200; sent={}; synced={}
+                S.command(player or p,"fetch",{request="r"..n,items=items})
+                assert(#sent==1 and sent[1].command=="fetch" and sent[1].args.request=="r"..n)
+                return sent[1].args
+            end
+            -- Every refusal leaves both items where they were.
+            local outside=crate(makeSquare(40,40,0),{name="outside"})
+            local stray=put(outside,makeItem("Base.Nails"))
+            local cold=crate(makeSquare(17,18,1),{name="cold",explored=false})
+            local hidden=put(cold,makeItem("Base.Nails"))
+            local shut=crate(makeSquare(16,18,1),{name="shut",class="IsoThumpable",locked=true})
+            local kept=put(shut,makeItem("Base.Nails"))
+            local claimed=crate(makeSquare(15,18,1),{name="claimed"}); safehouse(15,18,{})
+            local theirs=put(claimed,makeItem("Base.Nails"))
+            local cases={
+                {entry(outside,stray),"far"},{entry(cold,hidden),"missing"},{entry(shut,kept),"locked"},
+                {entry(claimed,theirs),"safehouse"},{entry(attic,makeItem("Base.Ghost")),"missing"},
+                {{x=30,y=3,z=0,o=0,c=0,t="crate",id=1},"unloaded"},
+            }
+            for _,case in ipairs(cases) do
+                local reply=fetch({entry(attic,wood),case[1]})
+                assert(not reply.ok and reply.code==case[2],tostring(reply.code).." for "..case[2])
+                assert(wood.container==attic and #p.inventory.items==0 and #synced==0)
+            end
+            assert(fetch({{x=1}}).code=="invalid")
+            -- Only items directly in the container: a lookup that finds one inside a nested bag is refused.
+            local bagged=put(crate(makeSquare(14,18,1),{name="bag"}),makeItem("Base.Nails"))
+            local pack=bagged.container
+            local holderOf=crate(makeSquare(13,18,1),{name="pack"})
+            holderOf.getItemWithID=function() return bagged end
+            holderOf.containsID=function() return true end
+            assert(fetch({entry(holderOf,bagged)}).code=="missing" and bagged.container==pack)
+            p.inventory.capacity=2
+            assert(fetch({entry(attic,wood),entry(attic,saw)}).code=="heavy")
+            p.inventory.capacity=50
+            -- Two squares of slack outside the area cover lag; three are refused. Stale indexes fall
+            -- back to the container of the same type holding the item.
+            p.x=-2
+            local reply=fetch({entry(attic,wood,7,3,"crate"),entry(attic,saw)})
+            assert(reply.ok and wood.container==p.inventory and saw.container==p.inventory)
+            assert(#synced==4 and synced[1][1]=="remove" and synced[1][2]==attic and synced[2][1]=="add" and synced[2][2]==p.inventory)
+            p.inventory:Remove(wood); attic:AddItem(wood)
+            p.x=-3
+            assert(fetch({entry(attic,wood)}).code=="far")
+            -- Without the base option or Base Stock Counter, only the nearby radius is left.
+            p.x=5; SandboxVars.BSCCraft.BaseArea=false
+            assert(fetch({entry(attic,wood)}).code=="far")
+            SandboxVars.BSCCraft.BaseArea=true; BaseStockCounter=nil
+            assert(fetch({entry(attic,wood)}).code=="far")
+            local shelf=crate(makeSquare(5,11,0),{name="shelf",type="shelves"})
+            local nails=put(shelf,makeItem("Base.Nails"))
+            assert(fetch({entry(shelf,nails)}).ok and nails.container==p.inventory)
+            -- Rate limit per player, per second.
+            local q=makePlayer(5,5,0,"bob")
+            for i=1,S.perWindow do sent={}; S.command(q,"fetch",{request="q"..i,items={{x=1}}}) end
+            sent={}; S.command(q,"fetch",{request="flood",items={{x=1}}})
+            assert(sent[1].args.code=="rate")
+            -- Malformed requests get no reply at all.
+            sent={}; S.command(p,"fetch",{request=5}); S.command(p,"steal",{request="x"}); S.command(p,"fetch","x")
+            assert(#sent==0)
+        ''')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
