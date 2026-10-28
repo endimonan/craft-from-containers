@@ -395,6 +395,113 @@ class ModTests(unittest.TestCase):
             assert(hammer.container==p.inventory and sent[1].args.kept==1)
         ''')
 
+    def test_craft_fetches_before_start_and_sends_leftovers_back(self):
+        self.check('''
+            isClient=function() return true end
+            local F=require "BSCCraft/Finder"
+            local H=require "BSCCraft/Hooks"
+            local C=require "BSCCraft/Craft"
+            SandboxVars.BSCCraft={BaseArea=true,NearbyRadius=0}
+            clientArea({x1=0,y1=0,x2=19,y2=19})
+            local p=makePlayer(1,1,0); players[0]=p; makeSquare(1,1,0)
+            local remote=crate(makeSquare(15,15,0),{name="remote"})
+            local plank=put(remote,makeItem("Base.Plank"))
+            local plank2=put(remote,makeItem("Base.Plank"))
+            local saw=put(remote,makeItem("Base.Saw"))
+            vanillaUI({})
+            ISHandcraftAction=makeHandcraftClass()
+            H.install(); C.install()
+            F.extra(p); scanAll(F)
+            local recipe={needs={{type="Base.Plank",count=1},{type="Base.Saw",count=1}}}
+            local function newAction(manual) return ISHandcraftAction:new(p,recipe,H.extended(p),manual or false,nil) end
+            local function consume(item) return function(self) p.inventory:Remove(item) end end
+            local a1,a2=newAction(),newAction()
+            queues[p]={queue={a1,a2}}
+            assert(a1:waitToStart()==true)
+            local request=lastClient("fetch").args
+            assert(ids(request.items)==plank.id..","..saw.id)
+            assert(request.items[1].x==15 and request.items[1].y==15 and request.items[1].o==0 and request.items[1].c==0 and request.items[1].t=="crate")
+            assert(a1:waitToStart()==true and #clientSent==1)
+            -- The reply alone isn't enough: the items must have arrived in the inventory.
+            C.receive("fetch",{request=request.request,ok=true})
+            assert(a1:waitToStart()==true)
+            serverMoves(p,{plank,saw})
+            assert(a1:waitToStart()==false)
+            a1:start()
+            assert(a1.started and a1.startedWith:size()==1 and a1.startedWith:get(0)==p.inventory)
+            -- A following handcraft inherits the saw instead of sending it back and forth.
+            a1.consume=consume(plank); a1:perform()
+            assert(a1.performed and not lastClient("return") and #a2.bsccCarry==2)
+            table.remove(queues[p].queue,1)
+            assert(a2:waitToStart()==true)
+            request=lastClient("fetch").args
+            assert(ids(request.items)==tostring(plank2.id))
+            serverMoves(p,{plank2}); C.receive("fetch",{request=request.request,ok=true})
+            assert(a2:waitToStart()==false)
+            a2:start(); a2.consume=consume(plank2); a2:perform()
+            local back=lastClient("return").args
+            assert(ids(back.items)==tostring(saw.id) and back.items[1].x==15 and back.items[1].t=="crate")
+            -- Refused fetch: the craft stops before vanilla start and says why.
+            p.inventory:Remove(saw); remote:AddItem(saw); remote:AddItem(plank2)
+            clientSent={}
+            local a3=newAction(); queues[p]={queue={a3}}
+            assert(a3:waitToStart()==true)
+            C.receive("fetch",{request=lastClient("fetch").args.request,ok=false,code="missing"})
+            assert(a3:waitToStart()==false)
+            a3:start()
+            assert(a3.forced and not a3.started and p.halo=="IGUI_BSCCraft_Fetch_missing")
+            -- No answer in time.
+            local a4=newAction(); queues[p]={queue={a4}}
+            assert(a4:waitToStart()==true)
+            time=time+C.timeout
+            assert(a4:waitToStart()==false)
+            a4:start(); assert(a4.forced and p.halo=="IGUI_BSCCraft_Fetch_timeout")
+            -- A success that shows up after the timeout is sent straight back.
+            clientSent={}
+            serverMoves(p,{plank2,saw}); C.receive("fetch",{request=a4.bscc.request,ok=true})
+            assert(ids(lastClient("return").args.items)==plank2.id..","..saw.id)
+            p.inventory:Remove(plank2); p.inventory:Remove(saw); remote:AddItem(plank2); remote:AddItem(saw)
+            -- Cancelled while waiting: whatever arrives later goes straight back.
+            clientSent={}
+            local a5=newAction(); queues[p]={queue={a5}}
+            assert(a5:waitToStart()==true)
+            local pending=lastClient("fetch").args
+            a5:interruptWaitToStart()
+            assert(a5.interrupted)
+            serverMoves(p,{plank2,saw}); C.receive("fetch",{request=pending.request,ok=true})
+            assert(ids(lastClient("return").args.items)==plank2.id..","..saw.id)
+            -- Manual picks are fetched as chosen.
+            p.inventory:Remove(plank2); p.inventory:Remove(saw); remote:AddItem(plank2); remote:AddItem(saw)
+            clientSent={}
+            local a6=newAction({[1]=list({plank2})}); queues[p]={queue={a6}}
+            assert(a6:waitToStart()==true and ids(lastClient("fetch").args.items)==tostring(plank2.id))
+            -- Nothing remote needed: no request, and remote containers still leave the action.
+            local hand=put(p.inventory,makeItem("Base.Saw")); put(p.inventory,makeItem("Base.Plank"))
+            clientSent={}
+            local a7=newAction(); queues[p]={queue={a7}}
+            assert(a7:waitToStart()==false and #clientSent==0)
+            a7:start(); assert(a7.startedWith:size()==1)
+            local vanilla=ISInventoryPaneContextMenu.getContainers(p)
+            local a8=ISHandcraftAction:new(p,recipe,vanilla,false,nil)
+            assert(a8:waitToStart()==false); a8:start(); assert(a8.startedWith==vanilla)
+            -- Adding to an empty queue starts the action at once, still inside the craft button's scope.
+            p.inventory:Remove(hand)
+            clientSent={}
+            local a9=newAction(); queues[p]={queue={a9}}
+            local waited=H.scoped(function() local w=a9:waitToStart(); a9:start(); return w end)()
+            assert(waited==true and ids(lastClient("fetch").args.items)==tostring(saw.id))
+            local a10=newAction(); queues[p]={queue={a10}}
+            a10.bscc={state="ready"}
+            H.scoped(function() a10:start() end)()
+            assert(a10.startedWith:size()==1)
+            p.inventory:AddItem(hand)
+            -- Disorganized characters keep what they fetched, like vanilla.
+            p.traits[CharacterTrait.DISORGANIZED]=true
+            a8.bsccCarry={{x=15,y=15,z=0,o=0,c=0,t="crate",id=hand.id}}
+            clientSent={}; queues[p]={queue={a8}}; a8:perform()
+            assert(#clientSent==0)
+        ''')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
