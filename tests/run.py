@@ -184,6 +184,27 @@ class ModTests(unittest.TestCase):
             F.tick(); assert(#F.extra(p)==0)
         ''')
 
+    def test_finder_nearby_same_floor_same_building(self):
+        self.check('''
+            local F=require "BSCCraft/Finder"
+            SandboxVars.BSCCraft={BaseArea=false,NearbyRadius=2}
+            local p=makePlayer(50,50,0); players[0]=p; makeSquare(50,50,0,"home")
+            crate(makeSquare(52,51,0,"home"),{name="shelf"})
+            crate(makeSquare(49,50,0,"home"),{name="fridge"})
+            crate(makeSquare(53,50,0,"home"),{name="far"})
+            crate(makeSquare(51,50,1,"home"),{name="upstairs"})
+            crate(makeSquare(50,52,0,"neighbour"),{name="neighbour"})
+            crate(makeSquare(51,48,0),{name="yard"})
+            assert(names(F.extra(p))=="fridge,shelf","got "..names(F.extra(p)))
+            -- Cached briefly per position: world changes show up after the TTL.
+            crate(makeSquare(50,51,0,"home"),{name="new"})
+            assert(names(F.extra(p))=="fridge,shelf")
+            time=time+600
+            assert(names(F.extra(p))=="fridge,new,shelf")
+            SandboxVars.BSCCraft.NearbyRadius=0
+            assert(#F.extra(p)==0)
+        ''')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
