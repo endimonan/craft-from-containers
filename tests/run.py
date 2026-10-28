@@ -502,6 +502,35 @@ class ModTests(unittest.TestCase):
             assert(#clientSent==0)
         ''')
 
+    def test_single_player_round_trip_uses_the_real_service(self):
+        self.check('''
+            local F=require "BSCCraft/Finder"
+            local H=require "BSCCraft/Hooks"
+            local C=require "BSCCraft/Craft"
+            local S=require "BSCCraft/Service"
+            BSCCraftFromContainers={server=S,client=C}
+            SandboxVars.BSCCraft={BaseArea=true,NearbyRadius=0}
+            serverArea({x1=0,y1=0,x2=19,y2=19})
+            local p=makePlayer(1,1,0); players[0]=p; makeSquare(1,1,0)
+            local remote=crate(makeSquare(15,15,1),{name="remote"})
+            local plank=put(remote,makeItem("Base.Plank"))
+            local saw=put(remote,makeItem("Base.Saw"))
+            vanillaUI({})
+            ISHandcraftAction=makeHandcraftClass()
+            H.install(); C.install()
+            F.extra(p); scanAll(F)
+            local recipe={needs={{type="Base.Plank",count=1},{type="Base.Saw",count=1}}}
+            local a=ISHandcraftAction:new(p,recipe,H.extended(p),false,nil)
+            queues[p]={queue={a}}
+            -- Single-player answers synchronously, so the action never waits.
+            assert(a:waitToStart()==false)
+            assert(plank.container==p.inventory and saw.container==p.inventory and #synced==0 and #sent==0)
+            a:start(); assert(a.startedWith:size()==1)
+            a.consume=function() p.inventory:Remove(plank) end
+            a:perform()
+            assert(saw.container==remote and plank.container==nil and #remote.items==1)
+        ''')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
