@@ -83,6 +83,39 @@ class ModTests(unittest.TestCase):
             end
         ''')
 
+    def test_rules_client_offers_only_what_the_server_accepts(self):
+        self.check('''
+            local R=require "BSCCraft/Rules"
+            local a={x1=10,y1=10,x2=29,y2=29}
+            local o=R.options({NearbyRadius=4})
+            assert(R.clientKind(o,15,15,0,28,28,2,a)=="base")
+            assert(R.clientKind(o,9,15,0,12,15,0,a)=="nearby")
+            assert(R.clientKind(o,9,15,0,28,28,0,a)==nil)
+            assert(R.clientKind(o,15,15,0,40,15,0,a)==nil)
+            assert(R.clientKind(o,15,15,0,15,18,1,nil)==nil)
+            assert(R.clientKind(R.options({BaseArea=false,NearbyRadius=0}),15,15,0,16,15,0,a)==nil)
+            assert(R.serverKind(o,15,15,0,20,15,1,nil)=="reach")
+            assert(R.serverKind(o,15,15,0,21,15,0,nil)=="nearby")
+            assert(R.serverKind(o,15,15,0,22,15,0,nil)==nil)
+            assert(R.serverKind(o,8,15,0,28,28,3,a)=="base")
+            assert(R.serverKind(o,7,15,0,28,28,3,a)==nil)
+            assert(R.serverKind(o,15,15,0,28,30,0,a)==nil)
+            assert(R.serverKind(R.options({BaseArea=false}),15,15,0,28,28,0,a)==nil)
+            -- Anything the client offers must survive the server check, even after a short move.
+            for trial=1,3000 do
+                local opts=R.options({BaseArea=testRandom(0,1)==1,NearbyRadius=testRandom(0,15)})
+                local px,py,pz=testRandom(0,40),testRandom(0,40),testRandom(0,2)
+                local tx,ty,tz=testRandom(0,40),testRandom(0,40),testRandom(0,2)
+                if R.clientKind(opts,px,py,pz,tx,ty,tz,a) then
+                    local mx,my=px+testRandom(-2,2),py+testRandom(-2,2)
+                    assert(R.serverKind(opts,mx,my,pz,tx,ty,tz,a),"server refused a client offer")
+                end
+            end
+            local entries={{x=5,y=5,z=0,i=1},{x=1,y=1,z=0,i=2},{x=2,y=1,z=1,i=3},{x=1,y=1,z=0,i=4}}
+            local near=R.nearest(entries,1,1,0,3)
+            assert(#near==3 and near[1].i==2 and near[2].i==4 and near[3].i==3)
+        ''')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
