@@ -363,6 +363,38 @@ class ModTests(unittest.TestCase):
             assert(#sent==0)
         ''')
 
+    def test_service_gives_back_what_it_can(self):
+        self.check('''
+            isServer=function() return true end
+            local S=require "BSCCraft/Service"
+            SandboxVars.BSCCraft={BaseArea=true,NearbyRadius=0}
+            serverArea({x1=0,y1=0,x2=19,y2=19})
+            local p=makePlayer(5,5,0)
+            local spot=makeSquare(12,12,0)
+            local shelf=crate(spot,{name="shelf",type="shelves",capacity=3})
+            local other=crate(spot,{name="other",type="crate"})
+            local saw=put(p.inventory,makeItem("Base.Saw"))
+            local hammer=put(p.inventory,makeItem("Base.Hammer"))
+            local fav=put(p.inventory,makeItem("Base.Axe",{favorite=true}))
+            local held=put(p.inventory,makeItem("Base.Knife")); p.equipped[held]=true
+            local big=put(p.inventory,makeItem("Base.Log",{weight=10}))
+            local function e(item) return {x=12,y=12,z=0,o=1,c=0,t="shelves",id=item.id} end
+            sent={}; synced={}
+            -- The indexes point at the other crate, so the type picks the shelf.
+            S.command(p,"return",{request="b1",items={e(saw),e(fav),e(held),e(big),e(makeItem("Base.Gone"))}})
+            assert(saw.container==shelf and fav.container==p.inventory and held.container==p.inventory and big.container==p.inventory)
+            assert(sent[1].args.returned==1 and sent[1].args.kept==3 and #synced==2)
+            -- Two containers of the same type: the index picks the one the item came from.
+            local twin=crate(spot,{name="twin",type="shelves"})
+            S.command(p,"return",{request="b3",items={{x=12,y=12,z=0,o=2,c=0,t="shelves",id=hammer.id}}})
+            assert(hammer.container==twin)
+            p.inventory:Remove(hammer); p.inventory:AddItem(hammer)
+            -- Too far now: kept in the inventory, never dropped.
+            p.x=40; p.y=40
+            sent={}; S.command(p,"return",{request="b2",items={e(hammer)}})
+            assert(hammer.container==p.inventory and sent[1].args.kept==1)
+        ''')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
