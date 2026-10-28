@@ -156,6 +156,34 @@ class ModTests(unittest.TestCase):
             assert(#F.result.list==0 and #F.extra(p)==0)
         ''')
 
+    def test_finder_limit_reloads_and_missing_dependency(self):
+        self.check('''
+            local F=require "BSCCraft/Finder"
+            SandboxVars.BSCCraft={BaseArea=true,NearbyRadius=0,MaxBaseContainers=16}
+            local area={x1=0,y1=0,x2=19,y2=19}
+            serverArea(area)
+            local p=makePlayer(0,0,0); players[0]=p; makeSquare(0,0,0)
+            for i=1,19 do crate(makeSquare(i,i,0),{name="c"..i}) end
+            F.extra(p); scanAll(F)
+            assert(#F.result.list==16 and F.result.list[1].container.name=="c1" and F.result.list[16].container.name=="c16")
+            -- A chunk reloaded mid-scan may be another place: its tile is dropped, not mixed in.
+            F.reset(); F.maxSteps=10; F.extra(p)
+            local s
+            repeat time=time+1; F.tick(); s=F.scan until not s or (s.chunk and s.tile.cx==1 and s.tile.cy==1 and s.mark>0 and #s.out>s.mark)
+            assert(s, "scan never reached the reloading tile")
+            chunks["1:1"].id=2
+            scanAll(F)
+            for _,e in ipairs(F.result.list) do assert(not (e.x>=8 and e.x<=15 and e.y>=8 and e.y<=15)) end
+            chunks["1:1"].id=1
+            -- Turning the option off or losing Base Stock Counter disables base crafting quietly.
+            SandboxVars.BSCCraft.BaseArea=false; F.tick()
+            assert(#F.result.list==0 and #F.extra(p)==0)
+            SandboxVars.BSCCraft.BaseArea=true; BaseStockCounter=nil; F.tick()
+            assert(#F.extra(p)==0)
+            BaseStockCounter={client={model={area={x1=0,y1=0,x2=999,y2=0}}}}
+            F.tick(); assert(#F.extra(p)==0)
+        ''')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
