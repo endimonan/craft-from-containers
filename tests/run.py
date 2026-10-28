@@ -51,6 +51,38 @@ class ModTests(unittest.TestCase):
         info = (MOD / "mod.info").read_text(encoding="utf-8")
         self.assertIn("require=\\BaseStockCounter", info.splitlines())
 
+    def test_rules_area_options_and_tiles(self):
+        self.check('''
+            local R=require "BSCCraft/Rules"
+            assert(R.area({x1=10,y1=10,x2=109,y2=109}).x2==109)
+            for _,bad in ipairs({-1,0/0,math.huge,1.5,"1"}) do
+                assert(not R.area({x1=bad,y1=0,x2=1,y2=1}))
+            end
+            assert(not R.area({x1=5,y1=0,x2=4,y2=1}))
+            assert(not R.area({x1=0,y1=0,x2=256,y2=0}))
+            assert(not R.area(nil) and not R.area("area"))
+            local o=R.options(nil)
+            assert(o.base and o.radius==5 and o.limit==256)
+            o=R.options({BaseArea=false,NearbyRadius=99,MaxBaseContainers=1})
+            assert(not o.base and o.radius==15 and o.limit==16)
+            o=R.options({NearbyRadius=-4.7,MaxBaseContainers=1e9})
+            assert(o.radius==0 and o.limit==1024)
+            for trial=1,100 do
+                local x,y=testRandom(0,200),testRandom(0,200)
+                local w,h=testRandom(1,100),testRandom(1,100)
+                local a=R.area({x1=x,y1=y,x2=x+w-1,y2=y+h-1})
+                local seen,n={},0
+                for _,t in ipairs(R.tiles(a,8)) do
+                    for tx=t.x1,t.x2 do for ty=t.y1,t.y2 do
+                        local key=tx..":"..ty
+                        assert(not seen[key]); seen[key]=true; n=n+1
+                        assert(math.floor(tx/8)==t.cx and math.floor(ty/8)==t.cy)
+                    end end
+                end
+                assert(n==w*h)
+            end
+        ''')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
