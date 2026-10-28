@@ -261,6 +261,29 @@ class ModTests(unittest.TestCase):
             assert(panel.seen:size()==2 and H.disabled)
         ''')
 
+    def test_rules_entries_reject_malformed_requests(self):
+        self.check('''
+            local R=require "BSCCraft/Rules"
+            local good={x=10,y=12,z=-1,o=2,c=0,t="crate",id=-7}
+            local out=R.entries({good,{x=1,y=1,z=0,o=0,c=1,t="fridge",id=9}})
+            assert(#out==2 and out[1].id==-7 and out[2].t=="fridge")
+            local function bad(change)
+                local e={x=10,y=12,z=0,o=2,c=0,t="crate",id=5}
+                for k,v in pairs(change) do e[k]=v end
+                return R.entries({e})==nil
+            end
+            assert(bad({x=1.5}) and bad({y=-1}) and bad({z=99}) and bad({o=-1}) and bad({c="0"}) and bad({id=0/0}))
+            assert(bad({t=""}) and bad({t=string.rep("a",65)}) and bad({t="crate\\n"}) and bad({t=5}))
+            assert(R.entries({good,good})==nil)
+            assert(R.entries({})==nil and R.entries("x")==nil and R.entries({"x"})==nil)
+            local many={}
+            for i=1,R.maxEntries do many[i]={x=1,y=1,z=0,o=0,c=0,t="crate",id=i} end
+            assert(#R.entries(many)==R.maxEntries)
+            many[#many+1]={x=1,y=1,z=0,o=0,c=0,t="crate",id=0}
+            assert(R.entries(many)==nil)
+            assert(R.token("abc") and not R.token("") and not R.token(string.rep("a",65)) and not R.token(5))
+        ''')
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
