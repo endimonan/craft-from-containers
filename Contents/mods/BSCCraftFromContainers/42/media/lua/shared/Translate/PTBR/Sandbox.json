@@ -1,0 +1,9 @@
+{
+  "Sandbox_BSCCraft": "Craft From Containers",
+  "Sandbox_BSCCraft_BaseArea": "Craftar a partir da área da base",
+  "Sandbox_BSCCraft_BaseArea_tooltip": "Dentro da área do Base Stock Counter, o craft pode usar containers explorados em qualquer ponto dela, em todos os andares.",
+  "Sandbox_BSCCraft_NearbyRadius": "Raio próximo",
+  "Sandbox_BSCCraft_NearbyRadius_tooltip": "O craft pode usar containers explorados até esta distância em quadrados, no mesmo andar e no mesmo prédio. 0 desativa.",
+  "Sandbox_BSCCraft_MaxBaseContainers": "Limite de containers da base",
+  "Sandbox_BSCCraft_MaxBaseContainers_tooltip": "Máximo de containers da base oferecidos ao craft de uma vez, dos mais próximos aos mais distantes. Diminua se a janela de craft ficar lenta."
+}
