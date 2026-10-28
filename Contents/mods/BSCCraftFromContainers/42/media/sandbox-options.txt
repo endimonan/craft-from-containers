@@ -1,0 +1,29 @@
+VERSION = 1,
+
+option BSCCraft.BaseArea
+{
+    type = boolean,
+    default = true,
+    page = BSCCraft,
+    translation = BSCCraft_BaseArea,
+}
+
+option BSCCraft.NearbyRadius
+{
+    type = integer,
+    min = 0,
+    max = 15,
+    default = 5,
+    page = BSCCraft,
+    translation = BSCCraft_NearbyRadius,
+}
+
+option BSCCraft.MaxBaseContainers
+{
+    type = integer,
+    min = 16,
+    max = 1024,
+    default = 256,
+    page = BSCCraft,
+    translation = BSCCraft_MaxBaseContainers,
+}
