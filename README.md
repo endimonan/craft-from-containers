@@ -2,7 +2,7 @@
 
 Craft with what's in nearby containers and anywhere in your base, without hauling everything to your inventory first. Built on top of [Base Stock Counter](https://github.com/endimonan/base-stock-counter): the base is the same shared area you define there. Supports single-player, hosted multiplayer and dedicated servers.
 
-[Contributing](CONTRIBUTING.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
+[Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3829207599) · [Contributing](CONTRIBUTING.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
 ![Craft From Containers cover](preview.png)
 
@@ -59,7 +59,7 @@ Returns are checked the same way, item by item. Anything that can't go back (con
 
 Target version: **Project Zomboid 42.21.0**. Requires **Base Stock Counter**. The game won't enable this mod without it.
 
-Not on the Workshop yet. For local testing, copy `Contents/mods/BSCCraftFromContainers` into `%USERPROFILE%/Zomboid/mods/BSCCraftFromContainers`, keeping `42` and `common`, and make sure Base Stock Counter is installed too. Enable both, then start the save.
+Subscribe on the [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3829207599), Workshop ID `3829207599`. For local testing, copy `Contents/mods/BSCCraftFromContainers` into `%USERPROFILE%/Zomboid/mods/BSCCraftFromContainers`, keeping `42` and `common`, and make sure Base Stock Counter is installed too. Enable both, then start the save.
 
 For a server, both mods go in the list:
 

@@ -1,7 +1,8 @@
 # Workshop packaging and presentation
 
 - Repository: https://github.com/endimonan/craft-from-containers
-- Workshop item: not published yet. The first upload creates it.
+- Official item: https://steamcommunity.com/sharedfiles/filedetails/?id=3829207599
+- Workshop ID: `3829207599`
 - Mod ID: `BSCCraftFromContainers`
 - Mod version: `0.1.0`
 - Target game: `42.21.0`
@@ -29,7 +30,7 @@ BSCCraftFromContainers/
 
 The runtime package has 23 files. With the preview and metadata, the uploader folder has 25 files.
 
-`workshop.txt` uses version 1, one description entry per line, Steam BBCode, valid tags and public visibility. It has no `id` line until the first upload. The description is English only; the in-game PT-BR translation stays in the mod.
+`workshop.txt` uses version 1, one description entry per line, Steam BBCode, valid tags and public visibility. It keeps the item ID; never upload without it. The description is English only; the in-game PT-BR translation stays in the mod.
 
 ## Art
 
@@ -50,13 +51,12 @@ python tools/prepare-workshop.py .runtime/Zomboid/Workshop/BSCCraftFromContainer
 python tools/check-workshop.py .runtime/Zomboid/Workshop/BSCCraftFromContainers
 ~~~
 
-## First upload
+## Updates
 
 1. Pass the in-game checks in [TESTING.md](TESTING.md). Runtime changes need that evidence; presentation-only changes don't.
 2. Delete the test copy at `%USERPROFILE%/Zomboid/mods/BSCCraftFromContainers`.
-3. Run `prepare-workshop.py`, then `check-workshop.py`, with no arguments.
+3. Rename or remove the old staged folder, then run `prepare-workshop.py` and `check-workshop.py` with no arguments. The check fails unless the staged ID is the one above.
 4. In the game, open **Workshop → Create and update items**, select BSCCraftFromContainers and submit. The game uploads the folder, not the ZIP.
-5. Copy the new `id=` line from the staged `workshop.txt` into the repository's `workshop.txt`, and add the ID to this file and the README.
-6. On the item's Steam page, add Base Stock Counter (3823984685) under **Add/Remove Required Items**, and upload `docs/images/how-it-works.png` to the gallery.
+5. The item requires Base Stock Counter (3823984685) on its Steam page; keep it that way.
 
 For later updates keep the item ID. Never create a second item or upload a fork.

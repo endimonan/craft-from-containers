@@ -1,4 +1,5 @@
 version=1
+id=3829207599
 title=Craft From Containers (Base Stock)
 description=[b]Craft From Containers: craft with what's in your base[/b]
 description=
@@ -30,6 +31,7 @@ description=Build 42.21.0. English and Brazilian Portuguese interface.
 description=
 description=[url=https://github.com/endimonan/craft-from-containers]Source code, documentation and contributions[/url]
 description=
+description=Workshop ID: 3829207599
 description=Mod ID: BSCCraftFromContainers
 description=Requires: Base Stock Counter (Workshop ID 3823984685)
 tags=Build 42;Multiplayer;QoL
