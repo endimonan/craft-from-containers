@@ -1,0 +1,11 @@
+{
+  "name": "craft-from-containers-tools",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "images": "node tools/render-art.mjs"
+  },
+  "devDependencies": {
+    "sharp": "0.34.5"
+  }
+}

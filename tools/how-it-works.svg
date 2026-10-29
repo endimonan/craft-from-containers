@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" font-family="Arial,sans-serif">
+  <defs>
+    <g id="crate" transform="translate(-160 -350)" stroke="#d0b483" stroke-width="4" stroke-linejoin="round">
+      <path d="m67 298 93-50 93 50-93 52z" fill="#8d7857"/>
+      <path d="m67 298 93 52v103l-93-52z" fill="#564c38"/>
+      <path d="m160 350 93-52v103l-93 52z" fill="#6a5b3e"/>
+      <path d="m82 331 60 34m-60 48 60-34m38-15 56-32m-56 98 56-32" fill="none"/>
+    </g>
+    <g id="hammer" stroke-linejoin="round">
+      <rect x="-4.5" y="6" width="9" height="46" rx="3.5" fill="#8d7857" stroke="#d0b483" stroke-width="3"/>
+      <rect x="-24" y="-8" width="48" height="16" rx="3" fill="#b9c5b8" stroke="#e6ece4" stroke-width="3"/>
+    </g>
+    <g id="bag" stroke="#d0b483" stroke-linejoin="round">
+      <path d="M-12 -38Q0 -52 12 -38" fill="none" stroke-width="5"/>
+      <rect x="-32" y="-38" width="64" height="84" rx="16" fill="#6a5b3e" stroke-width="4"/>
+      <path d="M-32 -12Q0 2 32 -12V-22Q32 -38 16 -38H-16Q-32 -38 -32 -22Z" fill="#8d7857" stroke-width="4"/>
+      <rect x="-18" y="10" width="36" height="26" rx="6" fill="#564c38" stroke-width="3"/>
+      <rect x="-4" y="-10" width="8" height="10" rx="1.5" fill="#a3d477" stroke="none"/>
+    </g>
+    <g id="result">
+      <rect x="-30" y="-30" width="60" height="60" rx="12" fill="#1d3028" stroke="#c1ee91" stroke-width="4"/>
+      <path d="M0 -20 5.29 -5.28 20.92 -4.8 8.56 4.78 12.93 19.8 0 11-12.93 19.8-8.56 4.78-20.92 -4.8-5.29 -5.28Z" fill="#c1ee91"/>
+    </g>
+    <marker id="go" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0 0 10 5 0 10z" fill="#a3d477"/>
+    </marker>
+    <marker id="back" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0 0 10 5 0 10z" fill="#c4d2c7"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="630" fill="#101b18"/>
+  <path d="M0 520 1200 -60M0 640 1200 60M380 630 1200 236" stroke="#1d3028" stroke-width="2"/>
+  <rect x="48" y="44" width="88" height="7" fill="#a3d477"/>
+  <text x="48" y="92" fill="#c4d2c7" font-size="18" letter-spacing="3">HOW IT WORKS</text>
+  <text x="46" y="142" fill="#f1f0df" font-size="36" font-weight="700">ONE CRAFT, THREE STEPS</text>
+
+  <rect x="48" y="176" width="352" height="380" rx="12" fill="#0a110e" stroke="#a3d477" stroke-width="2"/>
+  <text x="76" y="236" fill="#c1ee91" font-size="40" font-weight="700">1</text>
+  <text x="112" y="233" fill="#f1f0df" font-size="26" font-weight="700" letter-spacing="1">FETCH</text>
+  <use href="#crate" transform="translate(116 349) scale(0.5)"/>
+  <path d="M176 352H282" stroke="#a3d477" stroke-width="4" stroke-linecap="round" marker-end="url(#go)"/>
+  <use href="#hammer" transform="translate(222 296) scale(0.55) rotate(-35)"/>
+  <use href="#bag" transform="translate(334 349)"/>
+  <text x="76" y="470" fill="#c4d2c7" font-size="18">The server checks every item</text>
+  <text x="76" y="496" fill="#c4d2c7" font-size="18">and moves it to your inventory.</text>
+
+  <rect x="424" y="176" width="352" height="380" rx="12" fill="#0a110e" stroke="#a3d477" stroke-width="2"/>
+  <text x="452" y="236" fill="#c1ee91" font-size="40" font-weight="700">2</text>
+  <text x="488" y="233" fill="#f1f0df" font-size="26" font-weight="700" letter-spacing="1">CRAFT</text>
+  <use href="#bag" transform="translate(492 349)"/>
+  <use href="#hammer" transform="translate(516 316) scale(0.45) rotate(-35)"/>
+  <rect x="548" y="340" width="100" height="18" rx="9" fill="#101b18" stroke="#c4d2c7" stroke-width="2"/>
+  <rect x="551" y="343" width="66" height="12" rx="6" fill="#a3d477"/>
+  <path d="M658 349H672" stroke="#a3d477" stroke-width="4" stroke-linecap="round" marker-end="url(#go)"/>
+  <use href="#result" transform="translate(716 349)"/>
+  <text x="452" y="470" fill="#c4d2c7" font-size="18">The game's own craft runs,</text>
+  <text x="452" y="496" fill="#c4d2c7" font-size="18">same as with items you carry.</text>
+
+  <rect x="800" y="176" width="352" height="380" rx="12" fill="#0a110e" stroke="#a3d477" stroke-width="2"/>
+  <text x="828" y="236" fill="#c1ee91" font-size="40" font-weight="700">3</text>
+  <text x="864" y="233" fill="#f1f0df" font-size="26" font-weight="700" letter-spacing="1">RETURN</text>
+  <use href="#bag" transform="translate(868 349)"/>
+  <use href="#result" transform="translate(902 384) scale(0.5)"/>
+  <path d="M928 352H1020" stroke="#c4d2c7" stroke-width="4" stroke-linecap="round" stroke-dasharray="8 10" marker-end="url(#back)"/>
+  <use href="#hammer" transform="translate(970 296) scale(0.55) rotate(-35)"/>
+  <use href="#crate" transform="translate(1080 349) scale(0.5)"/>
+  <text x="828" y="470" fill="#c4d2c7" font-size="18">Tools and leftovers go back</text>
+  <text x="828" y="496" fill="#c4d2c7" font-size="18">to their container. You keep</text>
+  <text x="828" y="522" fill="#c4d2c7" font-size="18">the result.</text>
+
+  <text x="48" y="600" fill="#a3d477" font-size="15" letter-spacing="2">NEARBY: 5 SQUARES, SAME BUILDING · BASE AREA: EVERY FLOOR, WHILE YOU STAND IN IT</text>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <g id="hammer" stroke-linejoin="round">
+      <rect x="-4.5" y="6" width="9" height="46" rx="3.5" fill="#8d7857" stroke="#d0b483" stroke-width="3"/>
+      <rect x="-24" y="-8" width="48" height="16" rx="3" fill="#b9c5b8" stroke="#e6ece4" stroke-width="3"/>
+    </g>
+    <marker id="go" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0 0 10 5 0 10z" fill="#a3d477"/>
+    </marker>
+    <marker id="back" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0 0 10 5 0 10z" fill="#c4d2c7"/>
+    </marker>
+  </defs>
+  <rect width="512" height="512" fill="#101b18"/>
+  <path d="M0 380 512 85M0 450 512 155M0 310 512 15" stroke="#1d3028" stroke-width="2"/>
+  <rect x="38" y="36" width="88" height="7" fill="#a3d477"/>
+  <text x="38" y="87" fill="#c4d2c7" font-family="Arial,sans-serif" font-size="17" letter-spacing="3">CRAFT WITHOUT HAULING</text>
+  <text x="35" y="148" fill="#f1f0df" font-family="Arial,sans-serif" font-size="49" font-weight="700">CRAFT FROM</text>
+  <text x="35" y="202" fill="#f1f0df" font-family="Arial,sans-serif" font-size="49" font-weight="700">CONTAINERS</text>
+  <g transform="translate(-14 70) scale(0.8)" stroke="#d0b483" stroke-width="4" stroke-linejoin="round">
+    <path d="m67 298 93-50 93 50-93 52z" fill="#8d7857"/>
+    <path d="m67 298 93 52v103l-93-52z" fill="#564c38"/>
+    <path d="m160 350 93-52v103l-93 52z" fill="#6a5b3e"/>
+    <path d="m82 331 60 34m-60 48 60-34m38-15 56-32m-56 98 56-32" fill="none"/>
+  </g>
+  <path d="M198 300Q240 258 278 292" fill="none" stroke="#a3d477" stroke-width="4" stroke-linecap="round" marker-end="url(#go)"/>
+  <path d="M280 390Q240 432 202 400" fill="none" stroke="#c4d2c7" stroke-width="4" stroke-linecap="round" stroke-dasharray="9 8" marker-end="url(#back)"/>
+  <text x="240" y="262" text-anchor="middle" fill="#a3d477" font-family="Arial,sans-serif" font-size="13" letter-spacing="2">FETCH</text>
+  <text x="240" y="448" text-anchor="middle" fill="#c4d2c7" font-family="Arial,sans-serif" font-size="13" letter-spacing="2">RETURN</text>
+  <rect x="290" y="262" width="186" height="150" rx="10" fill="#0a110e" stroke="#a3d477" stroke-width="3"/>
+  <text x="310" y="298" fill="#b9c5b8" font-family="Arial,sans-serif" font-size="20">FROM BASE</text>
+  <use href="#hammer" transform="translate(333 342) rotate(-35)"/>
+  <text x="384" y="377" fill="#c1ee91" font-family="Arial,sans-serif" font-size="46" font-weight="700">1/1</text>
+  <text x="38" y="486" fill="#a3d477" font-family="Arial,sans-serif" font-size="14" letter-spacing="2">BUILD 42.21 · REQUIRES BASE STOCK COUNTER</text>
+</svg>

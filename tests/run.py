@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import re
+import struct
 import unittest
 
 from lupa.lua51 import LuaRuntime
@@ -48,8 +49,13 @@ class ModTests(unittest.TestCase):
         for name in re.findall(r"translation = (\w+)", options):
             self.assertIn(f"Sandbox_{name}", sandbox)
             self.assertIn(f"Sandbox_{name}_tooltip", sandbox)
-        info = (MOD / "mod.info").read_text(encoding="utf-8")
-        self.assertIn("require=\\BaseStockCounter", info.splitlines())
+        info = (MOD / "mod.info").read_text(encoding="utf-8").splitlines()
+        self.assertIn("require=\\BaseStockCounter", info)
+        for key, size in (("poster", 512), ("icon", 128)):
+            self.assertIn(f"{key}={key}.png", info)
+            png = (MOD / f"{key}.png").read_bytes()
+            self.assertEqual(png[:8], b"\x89PNG\r\n\x1a\n")
+            self.assertEqual(struct.unpack(">II", png[16:24]), (size, size))
 
     def test_rules_area_options_and_tiles(self):
         self.check('''
