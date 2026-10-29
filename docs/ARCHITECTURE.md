@@ -31,10 +31,11 @@ So extending the container list alone can't work: the craft fails at the last st
 - the square is loaded and the player may loot it (`SafeHouse.isSafehouseAllowLoot`, the same check vanilla transfers use);
 - the square passes `Rules.serverKind`: within vanilla reach, within the nearby radius plus 2 squares on one floor, or in the base area with the player within 2 squares of it;
 - the container is found by object and container index, falling back to the first container of the same type holding the item, since object order can differ between client and server;
-- the container is explored and not locked to the player, and the item is directly in it (not in a nested bag);
-- the inventory has room for the total weight.
+- the container is explored and not locked to the player, and the item is directly in it (not in a nested bag).
 
-Only then are the items moved with `ItemContainer:Remove`/`AddItem` and synced with `sendRemoveItemFromContainer`/`sendAddItemToContainer`, the same calls vanilla server code uses. The reply carries `ok` or a code the client shows: `invalid`, `unloaded`, `missing`, `far`, `locked`, `safehouse`, `heavy`, `rate`, `error`.
+Inventory capacity is not checked. The items only pass through the inventory for the craft, and crafting next to a crate needs no free space in vanilla either.
+
+Only then are the items moved with `ItemContainer:Remove`/`AddItem` and synced with `sendRemoveItemFromContainer`/`sendAddItemToContainer`, the same calls vanilla server code uses. The reply carries `ok` or a code the client shows: `invalid`, `unloaded`, `missing`, `far`, `locked`, `safehouse`, `rate`, `error`. Each refusal is logged once per 30 seconds per code, with the container and item it applies to.
 
 `return` is item by item. An item goes back only if it's still directly in the inventory, not equipped, not a favorite, and the original container passes the same checks and has room. Everything else stays in the inventory. The reply counts what was kept.
 

@@ -31,7 +31,7 @@ Containers that are never used:
 
 The client only asks. The server decides and moves the items, so everyone sees the same thing through the game's normal item sync.
 
-Before moving anything, the server checks every item in the request against its own state: the container is where the client said, the item is directly in it, the container is explored, not locked, not in a safehouse you can't loot, and either within the nearby radius or in the base area with you standing in it (2 squares of slack for lag). It also checks you can carry it all. If anything fails, nothing moves, the craft is cancelled and you get a message saying why.
+Before moving anything, the server checks every item in the request against its own state: the container is where the client said, the item is directly in it, the container is explored, not locked, not in a safehouse you can't loot, and either within the nearby radius or in the base area with you standing in it (2 squares of slack for lag). If anything fails, nothing moves, the craft is cancelled, you get a message saying why and the reason goes to the server log. A full inventory doesn't block a craft: the items only pass through it.
 
 Two players reaching for the same item: the server handles one request at a time. The second request finds the item gone and its craft is cancelled. Nothing is duplicated.
 

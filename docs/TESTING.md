@@ -28,7 +28,7 @@ Use disposable saves or copies, never the only copy. Write down the game version
 | Server reach | Change the area on the server while a client still has the old one cached, then craft from a container outside the new area. The server refuses with a message and nothing moves |
 | Lag | With simulated latency, crafts still finish. The 10-second wait isn't hit under normal latency |
 | Safehouse | A container in someone else's safehouse is never used, even in the base area |
-| Full inventory | Fill the inventory, then craft something heavy from the base. Refused with "you can't carry the items" |
+| Full inventory | Fill the inventory, then craft something heavy from the base. The items still come over for the craft and go back after |
 | Full container | Fill the source container after fetching. The tool stays in the inventory with a message |
 | Tool timing | Craft with a remote tool. The craft completes before the tool goes back (the client waits for the server to finish the action) |
 | Restart | Restart the server mid-batch. Nothing is lost; items are in the inventory or the containers |
