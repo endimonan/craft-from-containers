@@ -27,7 +27,7 @@ BSCCraftFromContainers/
           media/
 ~~~
 
-The runtime package has 22 files. With the preview and metadata, the uploader folder has 24 files.
+The runtime package has 23 files. With the preview and metadata, the uploader folder has 25 files.
 
 `workshop.txt` uses version 1, one description entry per line, Steam BBCode, valid tags and public visibility. It has no `id` line until the first upload. The description is English only; the in-game PT-BR translation stays in the mod.
 

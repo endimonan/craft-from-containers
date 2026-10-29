@@ -19,7 +19,7 @@ Include the exact Project Zomboid, Base Stock Counter and mod versions, single-p
 - Runtime code is Lua-only. Base Stock Counter is the only dependency, read through `BSCCraft/Base.lua`, never written to.
 - Only `server/BSCCraft/Service.lua` moves items, and only after checking every entry with the server's own state. Clients ask; they never move remote items.
 - A refused fetch moves nothing. A failed return keeps the item in the inventory, never drops or deletes it.
-- Don't wrap `ISHandcraftAction.new`: the server rebuilds actions from its parameter names.
+- Don't wrap `ISHandcraftAction.new` or `ISAddItemInRecipe.new`: the server rebuilds actions from their parameter names. Don't add a `complete` method to an action class that has none: that turns it into a network action.
 - Keep `getContainers` extended only inside the crafting entry points. Transfers, healing and other callers keep vanilla reach.
 - Read loaded chunks only. Don't force-load areas, generate loot or open unexplored containers.
 - Persist nothing. No ModData, no item or container modData.

@@ -9,6 +9,15 @@ Read from the installed 42.21.0 jar, not assumed:
 - `TransactionManager.isConsistent` refuses item transfers between the player and a container more than 5 squares away. In multiplayer a vanilla transfer from the far end of a base is rejected.
 - Timed actions with a `complete` method run on the server. The client sends the parameters of `new` (`containers` included) after the Lua `start()` ran, which is why vanilla `ISHandcraftAction:start` has `fixMovedItems`/`fixManualInputs` for items moved into the inventory before the craft.
 - `waitToStart` is called every update before an action starts. Cancelling during the wait calls `interruptWaitToStart`, not `stop`.
+- Workstations (forge, kiln, pottery wheel, loom and the rest) are entities with a `CraftBench` component. Their window, `ISCraftBenchPanel`, embeds the same `ISHandCraftPanel` and queues the same `ISHandcraftAction`, with the bench and its object.
+- Single-player and the server run an action's `complete()` right after `perform()`. A multiplayer client never runs it: its `perform()` waits until the server finished the action.
+- A network action writes an item parameter as its container plus its ID, and the server looks it up there. An item has to be in the inventory when the action starts.
+
+Cooking, as in adding an ingredient to food:
+
+- `ISInventoryPaneContextMenu.doEvorecipeMenu` builds the menu from the context menu's container list. `RecipeManager.getEvolvedRecipe(..., true)` only offers recipes with an ingredient in that list.
+- `onAddItemInEvoRecipe` queues a transfer for an ingredient that isn't carried, then `ISAddItemInRecipe`. The ingredient is used in `complete()`.
+- `ISAddItemInRecipe:isValidStart` needs the base item and the ingredient carried. The action queue checks it before starting any action that isn't first in the queue, and clears the whole queue when it fails.
 
 So extending the container list alone can't work: the craft fails at the last step, and in multiplayer the client can't move far items either. Only server code can.
 
@@ -18,9 +27,19 @@ So extending the container list alone can't work: the craft fails at the last st
 2. **Start.** The vanilla craft button queues `ISHandcraftAction`s as usual. Inside that scope, `transferIfNeeded` and `ReturnItemsToOriginalContainer` skip remote items: a vanilla transfer from that far would be rejected in multiplayer and cancel the queue.
 3. **Fetch.** `ISHandcraftAction.waitToStart` (new method, client and single-player) plans the action's inputs: the player's manual picks, or what a fresh `HandcraftLogic` with the extended list picks right now. Items in remote containers are sent to the server in one `fetch` request. The action waits until the server answers and the items are in the inventory, up to 10 seconds.
 4. **Craft.** Before vanilla `start`, the action's `containers` are replaced with the current vanilla list whenever they include a remote container. Vanilla then swaps the moved items in, sends the action to the server, and the server crafts with containers it accepts.
-5. **Return.** After `perform`, fetched items still in the inventory (tools, leftovers) are sent back with a `return` request. If the next queued action is another handcraft, they're handed over to it instead, so a batch doesn't move the saw back and forth. `stop` and `interruptWaitToStart` send back whatever was fetched. A fetch answered after a cancel or timeout is sent straight back when it arrives.
+5. **Return.** Fetched items still in the inventory (tools, leftovers) are sent back with a `return` request after the action finished: after `perform` on a multiplayer client, after `complete` in single-player. If the next queued action is the same kind, they're handed over to it instead, so a batch doesn't move the saw back and forth. `stop` and `interruptWaitToStart` send back whatever was fetched. A fetch answered after a cancel or timeout is sent straight back when it arrives.
 
-`ISHandcraftAction.new` is never wrapped: the server rebuilds actions from the parameter names of `new`.
+Workstations need nothing extra: their window and action are the ones above.
+
+### Cooking
+
+1. **Menu.** `Cooking` wraps `doEvorecipeMenu`. When there are extra containers, it asks `getEvolvedRecipe` again with the extended list and passes that list on, so recipes whose only ingredient is in the base show up.
+2. **Add.** `onAddItemInEvoRecipe` runs as vanilla for a carried or adjacent ingredient. For a remote one it queues the same steps without the ingredient's transfer: the base item's transfer if needed, `ISAddItemInRecipe`, and the base item's return.
+3. **Wait.** While the ingredient is still in a remote container, `isValidStart` answers true, so the queue doesn't clear itself. `waitToStart` fetches it like a craft input.
+4. **Start.** The action is pointed at the inventory copy of the ingredient by ID (a multiplayer client gets a new object), and vanilla's `isValidStart` runs now. If it fails, the action stops and the ingredient goes back.
+5. **Return.** What's left of the ingredient goes back after `complete`, as above. A used-up ingredient is simply gone.
+
+`ISHandcraftAction.new` and `ISAddItemInRecipe.new` are never wrapped: the server rebuilds actions from the parameter names of `new`. Only an existing `complete` is wrapped. Adding one to a class would turn it into a network action.
 
 ## Server: the only code that moves items
 
@@ -73,7 +92,8 @@ Every callback runs through `Guard.call`; errors are logged at most once per 30 
 
 ## Not covered
 
-- Building and workstation crafting use vanilla reach. Their logic has the same distance check and a different start path.
+- Building uses vanilla reach. `BuildLogic` has the same distance check and a different start path.
+- Machines you load through item slots, like drying racks (`CraftLogic` components), keep vanilla reach: items go in through the slots, not a craft.
 - The legacy `OnCraft` recipe path is untouched.
 - Split-screen: the base scan follows player 1. Other local players get it with their own access checks while player 1 is in the area.
 - Performance with hundreds of containers in the crafting window hasn't been measured in game. The base container limit exists for that.

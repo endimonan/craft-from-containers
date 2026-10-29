@@ -11,17 +11,23 @@ Craft with what's in nearby containers and anywhere in your base, without haulin
 - **Nearby:** crafting can use explored containers up to 5 squares away (configurable), on your floor and in the same building. Outdoors counts as one "building", so it never reaches through a wall into another house.
 - **Base area:** while you stand inside the Base Stock Counter area, crafting can use explored containers anywhere in it, on every floor, basement included.
 
-The crafting window and item right-click crafts show recipes as craftable using those containers. When the craft starts:
+Where it works:
+
+- **Crafting window and item right-click crafts.** Recipes show as craftable with items from those containers.
+- **Workstations.** The forge, kiln, pottery wheel, loom and the other benches use the same crafting window, so they work the same way.
+- **Cooking.** The right-click options that add an ingredient to food (sandwiches, salads, stews, spices) list ingredients from those containers too.
+
+When the craft starts:
 
 1. The server checks every remote item and brings it to your inventory.
 2. The game's own craft runs, exactly like it does with items you carry.
-3. What's left of the remote items (tools, partly used items) goes back to the container it came from. Disorganized characters keep them, like vanilla.
+3. What's left of the remote items (tools, partly used items like a spice) goes back to the container it came from. Disorganized characters keep them, like vanilla.
 
 In a batch, tools stay with you until the last craft instead of going back and forth. If a craft is cancelled, what was brought over goes back.
 
 ![Fetch, craft and return](docs/images/how-it-works.png)
 
-Everything else (transfers, healing, light sources, reloading, building, workstations) keeps the vanilla reach.
+Everything else (transfers, healing, light sources, reloading, building, machines you load through item slots like drying racks) keeps the vanilla reach.
 
 Containers that are never used:
 
@@ -74,7 +80,8 @@ The runtime is Lua-only, under `Contents/mods/BSCCraftFromContainers/42/media/lu
 | `shared/BSCCraft/Guard.lua` | Error containment and throttled logs |
 | `client/BSCCraft/Finder.lua` | Nearby lookup and incremental base scan |
 | `client/BSCCraft/Hooks.lua` | Shows the containers to crafting only; keeps vanilla transfers away from remote items |
-| `client/BSCCraft/Craft.lua` | Fetch before the craft, vanilla container list at start, returns after |
+| `client/BSCCraft/Craft.lua` | Fetch before the craft, vanilla's view of the items at start, returns after |
+| `client/BSCCraft/Cooking.lua` | Add-ingredient menu with remote ingredients, fetched instead of transferred |
 | `client/BSCCraft_Client.lua` | Client events |
 | `server/BSCCraft/Service.lua` | Server checks and item moves |
 | `server/BSCCraft_Server.lua` | Server and single-player events |
