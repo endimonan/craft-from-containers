@@ -134,16 +134,21 @@ function C.receive(command,args)
     end
 end
 
--- Before vanilla start: refuse a failed fetch, and drop remote containers from the action. Items
--- fetched for it are in the inventory now; vanilla's fixMovedItems/fixManualInputs swap them in.
-function C.prepare(action)
+-- Before vanilla start: refuse a failed fetch, then let the action take in what was fetched.
+function C.prepare(action,adopt)
     local s=action.bscc
-    local player=action.character
     if s and s.state=="failed" then
         local known={invalid=1,unloaded=1,missing=1,far=1,locked=1,safehouse=1,rate=1,timeout=1,many=1}
-        C.notice(player,"IGUI_BSCCraft_Fetch_"..(known[s.code] and s.code or "error"))
+        C.notice(action.character,"IGUI_BSCCraft_Fetch_"..(known[s.code] and s.code or "error"))
         return false
     end
+    return adopt(action)
+end
+
+-- Handcraft: drop remote containers from the action. Items fetched for it are in the inventory
+-- now; vanilla's fixMovedItems/fixManualInputs swap them in.
+function C.adoptCraft(action)
+    local player=action.character
     local list=Hooks.vanilla(player)
     local vanilla=Hooks.set(list)
     local containers=action.containers
@@ -178,14 +183,14 @@ function C.giveBack(player,entries)
     if #items>0 then C.send(player,"return",{request=C.id(),items=items}) end
 end
 
--- At perform the next queued action is still second. A following handcraft inherits the fetched
--- items so a batch doesn't send tools back and forth between crafts.
+-- At perform the next queued action is still second. A following action of the same kind inherits
+-- the fetched items so a batch doesn't send tools back and forth between crafts.
 function C.handOver(action)
     local entries=C.records(action)
     if #entries==0 then return nil end
     local queue=ISTimedActionQueue.getTimedActionQueue(action.character)
     local nextAction=queue and queue.queue and queue.queue[2]
-    if nextAction and nextAction.Type=="ISHandcraftAction" and nextAction.character==action.character then
+    if nextAction and nextAction.Type==action.Type and nextAction.character==action.character then
         nextAction.bsccCarry=nextAction.bsccCarry or {}
         for _,e in ipairs(entries) do table.insert(nextAction.bsccCarry,e) end
         return nil
@@ -193,19 +198,17 @@ function C.handOver(action)
     return entries
 end
 
-function C.install()
-    if C.installed then return end
-    local A=ISHandcraftAction
+-- Methods are replaced on the class. new() is never wrapped: the server rebuilds actions from its
+-- parameter names.
+function C.hook(A,name,adopt)
     if type(A)~="table" or type(A.start)~="function" or type(A.perform)~="function" or type(A.stop)~="function" then
-        C.disabled=true; G.log("craft","ISHandcraftAction missing; remote containers are display only"); return
+        G.log("craft "..name,name.." missing; its remote items are display only"); return false
     end
     local waitToStart,interrupt,start,perform,stop=A.waitToStart,A.interruptWaitToStart,A.start,A.perform,A.stop
     local wait=G.call("wait",C.wait)
     local prepare=G.call("prepare",C.prepare)
     local handOver=G.call("hand over",C.handOver)
     local giveBack=G.call("give back",C.giveBack)
-    -- Methods are replaced on the class. new() is never wrapped: the server rebuilds actions from
-    -- its parameter names.
     function A.waitToStart(self,...)
         if not C.disabled and wait(self) then return true end
         if waitToStart then return waitToStart(self,...) end
@@ -213,7 +216,7 @@ function C.install()
     end
     function A.start(self,...)
         -- An addon error lets vanilla continue; only a refused fetch stops the craft.
-        if not C.disabled and prepare(self)==false then self:forceStop(); return end
+        if not C.disabled and prepare(self,adopt)==false then self:forceStop(); return end
         return start(self,...)
     end
     function A.perform(self,...)
@@ -235,6 +238,12 @@ function C.install()
         giveBack(self.character,C.records(self))
         return result
     end
+    return true
+end
+
+function C.install()
+    if C.installed then return end
+    C.crafts=C.hook(ISHandcraftAction,"ISHandcraftAction",C.adoptCraft)
     C.installed=true
 end
 
