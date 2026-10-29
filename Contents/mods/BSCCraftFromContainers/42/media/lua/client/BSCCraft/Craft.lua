@@ -205,6 +205,7 @@ function C.hook(A,name,adopt)
         G.log("craft "..name,name.." missing; its remote items are display only"); return false
     end
     local waitToStart,interrupt,start,perform,stop=A.waitToStart,A.interruptWaitToStart,A.start,A.perform,A.stop
+    local complete=A.complete
     local wait=G.call("wait",C.wait)
     local prepare=G.call("prepare",C.prepare)
     local handOver=G.call("hand over",C.handOver)
@@ -219,11 +220,26 @@ function C.hook(A,name,adopt)
         if not C.disabled and prepare(self,adopt)==false then self:forceStop(); return end
         return start(self,...)
     end
+    -- Single-player runs complete() right after perform(), and some actions use their items
+    -- there, so leftovers go back after it. A multiplayer client never runs complete(): its
+    -- perform() waits until the server has finished the action.
+    local later=type(complete)=="function" and not isClient()
     function A.perform(self,...)
         local entries=handOver(self)
         local result=perform(self,...)
-        if entries then giveBack(self.character,entries) end
+        if entries then
+            if later then self.bsccLeft=entries else giveBack(self.character,entries) end
+        end
         return result
+    end
+    if later then
+        function A.complete(self,...)
+            local result=complete(self,...)
+            local entries=self.bsccLeft
+            self.bsccLeft=nil
+            if entries then giveBack(self.character,entries) end
+            return result
+        end
     end
     -- Cancelling during waitToStart calls this instead of stop(); a fetch still in flight is sent
     -- back when its reply arrives.

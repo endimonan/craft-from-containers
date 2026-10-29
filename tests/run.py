@@ -539,7 +539,9 @@ class ModTests(unittest.TestCase):
             assert(plank.container==p.inventory and saw.container==p.inventory and #synced==0 and #sent==0)
             a:start(); assert(a.startedWith:size()==1)
             a.consume=function() p.inventory:Remove(plank) end
-            a:perform()
+            -- complete() runs right after perform() in single-player; leftovers go back after it.
+            a:perform(); assert(saw.container==p.inventory)
+            a:complete()
             assert(saw.container==remote and plank.container==nil and #remote.items==1)
         ''')
 

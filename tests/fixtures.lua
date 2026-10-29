@@ -221,6 +221,7 @@ function makeHandcraftClass()
     end
     function A:start() self.startedWith=self.containers; self.started=true end
     function A:perform() self.performed=true; if self.consume then self.consume(self) end end
+    function A:complete() self.completed=true; return true end
     function A:stop() self.stopped=true end
     function A:forceStop() self.forced=true; self:stop() end
     return A
