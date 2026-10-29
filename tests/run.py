@@ -333,16 +333,14 @@ class ModTests(unittest.TestCase):
             holderOf.getItemWithID=function() return bagged end
             holderOf.containsID=function() return true end
             assert(fetch({entry(holderOf,bagged)}).code=="missing" and bagged.container==pack)
-            p.inventory.capacity=2
-            assert(fetch({entry(attic,wood),entry(attic,saw)}).code=="heavy")
-            p.inventory.capacity=50
             -- Two squares of slack outside the area cover lag; three are refused. Stale indexes fall
             -- back to the container of the same type holding the item.
-            p.x=-2
+            -- A full inventory doesn't block it: the items only pass through for the craft.
+            p.x=-2; p.inventory.capacity=0
             local reply=fetch({entry(attic,wood,7,3,"crate"),entry(attic,saw)})
             assert(reply.ok and wood.container==p.inventory and saw.container==p.inventory)
             assert(#synced==4 and synced[1][1]=="remove" and synced[1][2]==attic and synced[2][1]=="add" and synced[2][2]==p.inventory)
-            p.inventory:Remove(wood); attic:AddItem(wood)
+            p.inventory:Remove(wood); attic:AddItem(wood); p.inventory.capacity=50
             p.x=-3
             assert(fetch({entry(attic,wood)}).code=="far")
             -- Without the base option or Base Stock Counter, only the nearby radius is left.

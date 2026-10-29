@@ -6,7 +6,6 @@
   "IGUI_BSCCraft_Fetch_far": "Craft cancelled: a container is out of reach",
   "IGUI_BSCCraft_Fetch_locked": "Craft cancelled: a container is locked",
   "IGUI_BSCCraft_Fetch_safehouse": "Craft cancelled: a container is in a safehouse you can't loot",
-  "IGUI_BSCCraft_Fetch_heavy": "Craft cancelled: you can't carry the items",
   "IGUI_BSCCraft_Fetch_rate": "Craft cancelled: too many requests, try again",
   "IGUI_BSCCraft_Fetch_timeout": "Craft cancelled: the server didn't answer in time",
   "IGUI_BSCCraft_Fetch_many": "Craft cancelled: too many items from other containers",

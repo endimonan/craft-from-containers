@@ -59,13 +59,15 @@ function S.move(item,from,to)
     if isServer() then sendAddItemToContainer(to,item) end
 end
 
--- All or nothing: every entry is checked before the first item moves.
+-- All or nothing: every entry is checked before the first item moves. Capacity is not checked:
+-- the items only pass through the inventory for the craft, like crafting next to a crate needs no
+-- free space in vanilla.
 function S.fetch(player,a)
     local entries=R.entries(a.items)
     if not entries then return "invalid" end
     local o,area=Base.options(),Base.area()
     local inventory=player:getInventory()
-    local moves,weight={},0
+    local moves={}
     for _,e in ipairs(entries) do
         local square,code=S.reach(player,e,o,area)
         if not square then return code end
@@ -76,9 +78,7 @@ function S.fetch(player,a)
         local item=container:getItemWithID(e.id)
         if not item or item:getContainer()~=container then return "missing" end
         moves[#moves+1]={item=item,from=container}
-        weight=weight+item:getUnequippedWeight()
     end
-    if not inventory:hasRoomFor(player,weight) then return "heavy" end
     for _,m in ipairs(moves) do S.move(m.item,m.from,inventory) end
 end
 

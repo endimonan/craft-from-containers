@@ -136,7 +136,7 @@ function C.prepare(action)
     local s=action.bscc
     local player=action.character
     if s and s.state=="failed" then
-        local known={invalid=1,unloaded=1,missing=1,far=1,locked=1,safehouse=1,heavy=1,rate=1,timeout=1,many=1}
+        local known={invalid=1,unloaded=1,missing=1,far=1,locked=1,safehouse=1,rate=1,timeout=1,many=1}
         C.notice(player,"IGUI_BSCCraft_Fetch_"..(known[s.code] and s.code or "error"))
         return false
     end
