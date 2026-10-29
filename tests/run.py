@@ -499,6 +499,14 @@ class ModTests(unittest.TestCase):
             H.scoped(function() a10:start() end)()
             assert(a10.startedWith:size()==1)
             p.inventory:AddItem(hand)
+            -- Workstations (forge, kiln, pottery wheel...) run the same action with their bench and
+            -- object, and the planner gets both.
+            local bench,forge,seen={},{},nil
+            local native=HandcraftLogic.new
+            HandcraftLogic.new=function(player,b,iso) seen={b,iso}; return native(player,b,iso) end
+            local a11=newAction(); a11.craftBench=bench; a11.isoObject=forge; queues[p]={queue={a11}}
+            assert(a11:waitToStart()==false and seen[1]==bench and seen[2]==forge)
+            HandcraftLogic.new=native
             -- Disorganized characters keep what they fetched, like vanilla.
             p.traits[CharacterTrait.DISORGANIZED]=true
             a8.bsccCarry={{x=15,y=15,z=0,o=0,c=0,t="crate",id=hand.id}}
