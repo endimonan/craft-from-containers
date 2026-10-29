@@ -12,7 +12,8 @@ function getText(key) return key end
 function isServer() return false end
 function isClient() return false end
 local classes={IsoThumpable={IsoObject=true},IsoPlayer={IsoGameCharacter=true,IsoMovingObject=true},
-    BaseVehicle={IsoMovingObject=true},IsoDeadBody={},IsoWorldInventoryObject={},InventoryItem={}}
+    BaseVehicle={IsoMovingObject=true},IsoDeadBody={},IsoWorldInventoryObject={},InventoryItem={},
+    Food={InventoryItem=true}}
 function instanceof(obj,class)
     if type(obj)~="table" then return false end
     return obj.class==class or (classes[obj.class] or {})[class]==true
@@ -55,6 +56,11 @@ ISTimedActionQueue={getTimedActionQueue=function(character)
     queues[character]=queues[character] or {queue={}}
     return queues[character]
 end}
+function ISTimedActionQueue.add(action)
+    local q=ISTimedActionQueue.getTimedActionQueue(action.character)
+    q.queue[#q.queue+1]=action
+    return action
+end
 
 function makeSquare(x,y,z,building)
     local s={x=x,y=y,z=z,building=building,objects={}}
@@ -100,6 +106,7 @@ local function holder(c)
     c.items=c.items or {}; c.capacity=c.capacity or 50
     function c:getItems() return list(self.items) end
     function c:containsID(id) return self:getItemWithID(id)~=nil end
+    function c:contains(item) for _,it in ipairs(self.items) do if it==item then return true end end return false end
     function c:getItemWithID(id) for _,it in ipairs(self.items) do if it.id==id then return it end end end
     function c:Remove(item)
         for i,it in ipairs(self.items) do if it==item then table.remove(self.items,i); item.container=nil; return end end
@@ -225,6 +232,45 @@ function makeHandcraftClass()
     function A:stop() self.stopped=true end
     function A:forceStop() self.forced=true; self:stop() end
     return A
+end
+
+-- Stand-in for ISAddItemInRecipe. Like vanilla in multiplayer, the start check wants the base item
+-- and the ingredient carried.
+function makeRecipeActionClass()
+    local Base={}
+    Base.__index=Base
+    function Base:waitToStart() return false end
+    function Base:interruptWaitToStart() self.interrupted=true end
+    local A=setmetatable({Type="ISAddItemInRecipe"},Base)
+    A.__index=A
+    function A:new(character,recipe,baseItem,usedItem)
+        return setmetatable({character=character,recipe=recipe,baseItem=baseItem,usedItem=usedItem},A)
+    end
+    function A:isValidStart()
+        local inventory=self.character:getInventory()
+        return inventory:containsID(self.baseItem:getID()) and inventory:containsID(self.usedItem:getID())
+    end
+    function A:start() self.started=true; self.startedWith=self.usedItem end
+    function A:perform() self.performed=true end
+    -- Vanilla uses the ingredient here, after perform().
+    function A:complete() self.completed=true; if self.consume then self.consume(self) end; return true end
+    function A:stop() self.stopped=true end
+    function A:forceStop() self.forced=true; self:stop() end
+    return A
+end
+
+function food(container,fullType)
+    local item=put(container,makeItem(fullType)); item.class="Food"
+    function item:setChef(name) self.chef=name end
+    return item
+end
+-- What a multiplayer client gets when the server moves an item to the inventory: the same ID in a
+-- new object.
+function arrive(player,item)
+    item.container:Remove(item)
+    local copy=makeItem(item.fullType,{id=item.id}); copy.class=item.class; copy.setChef=item.setChef
+    player:getInventory():AddItem(copy)
+    return copy
 end
 
 function names(entries)

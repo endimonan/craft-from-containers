@@ -86,6 +86,10 @@ public final class NativeLuaCheck {
             method("zombie.inventory.ItemContainer", name);
         method("zombie.inventory.ItemContainer", "getItemWithID", int.class);
         method("zombie.inventory.ItemContainer", "containsID", int.class);
+        method("zombie.inventory.ItemContainer", "contains", item);
+        method("zombie.inventory.RecipeManager", "getEvolvedRecipe", item, character, ArrayList.class, boolean.class);
+        method("zombie.inventory.types.Food", "setChef", String.class);
+        method("zombie.characters.IsoPlayer", "getUsername");
         method("zombie.inventory.ItemContainer", "Remove", item);
         method("zombie.inventory.ItemContainer", "AddItem", item);
         method("zombie.inventory.ItemContainer", "isItemAllowed", item);

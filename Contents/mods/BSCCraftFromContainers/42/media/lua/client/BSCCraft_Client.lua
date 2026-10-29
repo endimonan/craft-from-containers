@@ -3,6 +3,7 @@ local Base=require "BSCCraft/Base"
 local Finder=require "BSCCraft/Finder"
 local Hooks=require "BSCCraft/Hooks"
 local Craft=require "BSCCraft/Craft"
+local Cooking=require "BSCCraft/Cooking"
 BSCCraftFromContainers=BSCCraftFromContainers or {}
 BSCCraftFromContainers.client=Craft
 
@@ -11,6 +12,7 @@ Events.OnGameStart.Add(G.call("start",function()
     if not Base.present() then G.log("dependency","Base Stock Counter is not loaded; base-area crafting is off") end
     Hooks.install()
     Craft.install()
+    Cooking.install()
 end))
 Events.OnTick.Add(G.call("tick",function() if not Finder.disabled then Finder.tick() end end,
     function() Finder.reset(); Finder.disabled=true end))

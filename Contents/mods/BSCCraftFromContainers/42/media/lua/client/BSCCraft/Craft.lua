@@ -1,6 +1,8 @@
--- Ties remote containers into the vanilla handcraft action. The action waits in waitToStart while
--- the server fetches remote inputs into the inventory, starts with the vanilla container list
--- (vanilla refuses any container beyond 2.5 squares when the recipe runs) and sends leftovers back.
+-- Ties remote containers into the vanilla actions that use items: handcrafts (crafting window,
+-- workstations, item context crafts) and evolved recipes (adding an ingredient to food). The action
+-- waits in waitToStart while the server fetches remote inputs into the inventory, starts with
+-- vanilla's view of them (vanilla refuses any craft container beyond 2.5 squares) and sends
+-- leftovers back.
 local R=require "BSCCraft/Rules"
 local G=require "BSCCraft/Guard"
 local Hooks=require "BSCCraft/Hooks"
@@ -29,9 +31,10 @@ function C.entry(item)
         c=parent:getContainerIndex(container),t=container:getType(),id=item:getID()}
 end
 
--- Input items the action will use: the player's manual picks, or what the game would pick now
--- with the extra containers included.
+-- Input items the action will use. Handcraft: the player's manual picks, or what the game would
+-- pick now with the extra containers included. Evolved recipe: the ingredient.
 function C.inputs(action)
+    if action.Type=="ISAddItemInRecipe" then return {action.usedItem} end
     local out={}
     local function add(list)
         if not list then return end
@@ -95,7 +98,7 @@ function C.wait(action)
     if s.state~="waiting" then return false end
     if s.reply and not s.reply.ok then
         C.fail(s,s.reply.code or "error")
-        G.log("fetch "..s.code,"server refused "..#s.entries.." item(s) for "..tostring(action.craftRecipe and action.craftRecipe:getName()))
+        G.log("fetch "..s.code,"server refused "..#s.entries.." item(s) for "..tostring(action.craftRecipe and action.craftRecipe:getName() or action.Type))
         return false
     end
     if s.reply and C.arrived(action.character,s.entries) then
@@ -163,6 +166,30 @@ function C.adoptCraft(action)
     return true
 end
 
+-- Evolved recipe: a fetched ingredient reaches a multiplayer client as a new object, so the action
+-- is pointed at the inventory copy, like vanilla start does for the base item. Vanilla's start check
+-- needs the ingredient carried, so it was put off while the ingredient was away and runs now.
+function C.adoptRecipe(validStart)
+    return function(action)
+        local s=action.bscc
+        if not (s and s.fetched) then return true end
+        local player=action.character
+        local item=action.usedItem and player:getInventory():getItemWithID(action.usedItem:getID())
+        if item then
+            action.usedItem=item
+            if instanceof(item,"Food") then item:setChef(player:getUsername()) end
+        end
+        return validStart(action) and true or false
+    end
+end
+
+-- An evolved recipe ingredient still in a remote container. The action queue runs vanilla's start
+-- check before the fetch could happen, and that check needs the ingredient carried.
+function C.away(action)
+    local item,player=action.usedItem,action.character
+    return item~=nil and player~=nil and Hooks.remote(item:getContainer(),player,Hooks.set(Hooks.vanilla(player)))
+end
+
 function C.records(action)
     local out={}
     for _,source in ipairs({action.bscc and action.bscc.fetched or {}, action.bsccCarry or {}}) do
@@ -200,27 +227,34 @@ end
 
 -- Methods are replaced on the class. new() is never wrapped: the server rebuilds actions from its
 -- parameter names.
-function C.hook(A,name,adopt)
+function C.hook(A,name,adopt,defer)
     if type(A)~="table" or type(A.start)~="function" or type(A.perform)~="function" or type(A.stop)~="function" then
         G.log("craft "..name,name.." missing; its remote items are display only"); return false
     end
-    local waitToStart,interrupt,start,perform,stop=A.waitToStart,A.interruptWaitToStart,A.start,A.perform,A.stop
+    local waitToStart,interrupt,start,perform,stop,isValidStart=A.waitToStart,A.interruptWaitToStart,A.start,A.perform,A.stop,A.isValidStart
     local complete=A.complete
     local wait=G.call("wait",C.wait)
     local prepare=G.call("prepare",C.prepare)
     local handOver=G.call("hand over",C.handOver)
     local giveBack=G.call("give back",C.giveBack)
+    if defer then
+        local away=G.call("away",C.away)
+        function A.isValidStart(self,...)
+            if not C.disabled and away(self) then return true end
+            return isValidStart(self,...)
+        end
+    end
     function A.waitToStart(self,...)
         if not C.disabled and wait(self) then return true end
         if waitToStart then return waitToStart(self,...) end
         return false
     end
     function A.start(self,...)
-        -- An addon error lets vanilla continue; only a refused fetch stops the craft.
+        -- An addon error lets vanilla continue; only a refused fetch or check stops the action.
         if not C.disabled and prepare(self,adopt)==false then self:forceStop(); return end
         return start(self,...)
     end
-    -- Single-player runs complete() right after perform(), and some actions use their items
+    -- Single-player runs complete() right after perform(), and evolved recipes use the ingredient
     -- there, so leftovers go back after it. A multiplayer client never runs complete(): its
     -- perform() waits until the server has finished the action.
     local later=type(complete)=="function" and not isClient()
@@ -260,6 +294,12 @@ end
 function C.install()
     if C.installed then return end
     C.crafts=C.hook(ISHandcraftAction,"ISHandcraftAction",C.adoptCraft)
+    local A=ISAddItemInRecipe
+    if type(A)=="table" and type(A.isValidStart)=="function" then
+        C.recipes=C.hook(A,"ISAddItemInRecipe",C.adoptRecipe(A.isValidStart),true)
+    else
+        G.log("craft ISAddItemInRecipe","ISAddItemInRecipe missing; evolved recipes keep vanilla reach")
+    end
     C.installed=true
 end
 

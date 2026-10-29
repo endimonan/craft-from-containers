@@ -514,6 +514,109 @@ class ModTests(unittest.TestCase):
             assert(#clientSent==0)
         ''')
 
+    def test_cooking_lists_base_ingredients_and_fetches_them(self):
+        self.check('''
+            isClient=function() return true end
+            local F=require "BSCCraft/Finder"
+            local H=require "BSCCraft/Hooks"
+            local C=require "BSCCraft/Craft"
+            local K=require "BSCCraft/Cooking"
+            SandboxVars.BSCCraft={BaseArea=true,NearbyRadius=0}
+            clientArea({x1=0,y1=0,x2=19,y2=19})
+            local p=makePlayer(1,1,0); players[0]=p; makeSquare(1,1,0)
+            local stove=crate(makeSquare(2,1,0),{name="stove",type="stove"})
+            local pantry=crate(makeSquare(15,15,0),{name="pantry",type="counter"})
+            local salt=food(pantry,"Base.Salt")
+            local soup=food(p.inventory,"Base.PotOfSoup")
+            vanillaUI({stove})
+            -- Like vanilla: recipes for the base item with at least one ingredient in the containers.
+            local stew={ingredients={["Base.Salt"]=true,["Base.Carrots"]=true}}
+            RecipeManager={getEvolvedRecipe=function(baseItem,character,containers,need)
+                for i=0,containers:size()-1 do
+                    for _,item in ipairs(containers:get(i).items) do
+                        if stew.ingredients[item.fullType] then return list({stew}) end
+                    end
+                end
+                return list({})
+            end}
+            local menus,vanillaAdds={},{}
+            ISInventoryPaneContextMenu.doEvorecipeMenu=function(context,items,player,evorecipe,baseItem,containerList)
+                menus[#menus+1]={recipes=evorecipe,list=containerList}
+            end
+            ISInventoryPaneContextMenu.onAddItemInEvoRecipe=function(recipe,baseItem,usedItem,player)
+                vanillaAdds[#vanillaAdds+1]=usedItem
+            end
+            ISInventoryTransferUtil={newInventoryTransferAction=function(character,item,from,to)
+                return {Type="ISInventoryTransferAction",character=character,item=item}
+            end}
+            ISAddItemInRecipe=makeRecipeActionClass()
+            H.install(); C.install(); K.install(); K.install()
+            F.extra(p); scanAll(F)
+            -- The menu is redone with the base containers, so a base-only ingredient shows up.
+            local vanilla=ISInventoryPaneContextMenu.getContainers(p)
+            local before=RecipeManager.getEvolvedRecipe(soup,p,vanilla,true)
+            assert(before:size()==0)
+            ISInventoryPaneContextMenu.doEvorecipeMenu({},{soup},0,before,soup,vanilla)
+            assert(menus[1].recipes:size()==1 and menus[1].list:size()==3 and menus[1].list:get(2)==pantry)
+            -- Choosing it queues the add action alone: no transfer from that far.
+            ISInventoryPaneContextMenu.onAddItemInEvoRecipe(stew,soup,salt,0)
+            local a=queues[p].queue[1]
+            assert(#vanillaAdds==0 and #queues[p].queue==1 and a.Type=="ISAddItemInRecipe" and a.usedItem==salt)
+            -- The queue's start check would cancel it while the salt is away, so it waits for the fetch.
+            assert(a:isValidStart()==true and not p.inventory:containsID(salt.id))
+            assert(a:waitToStart()==true)
+            local request=lastClient("fetch").args
+            assert(ids(request.items)==tostring(salt.id) and request.items[1].t=="counter")
+            C.receive("fetch",{request=request.request,ok=true})
+            local copy=arrive(p,salt)
+            assert(a:waitToStart()==false)
+            -- The action uses the inventory copy. Salting again right after keeps the salt for the
+            -- next add; what's left goes back after the last one, never to an unrelated action.
+            a:start()
+            assert(a.started and a.startedWith==copy and copy.chef=="alice")
+            local again=ISAddItemInRecipe:new(p,stew,soup,copy)
+            queues[p]={queue={a,again}}
+            a:perform()
+            assert(not lastClient("return") and #again.bsccCarry==1)
+            queues[p]={queue={again,{Type="ISInventoryTransferAction",character=p}}}
+            assert(again:waitToStart()==false)
+            again:start(); again:perform()
+            assert(ids(lastClient("return").args.items)==tostring(salt.id))
+            p.inventory:Remove(copy); pantry:AddItem(salt)
+            -- A carried ingredient keeps vanilla's own handler.
+            local carrots=food(p.inventory,"Base.Carrots")
+            ISInventoryPaneContextMenu.onAddItemInEvoRecipe(stew,soup,carrots,0)
+            assert(#vanillaAdds==1 and vanillaAdds[1]==carrots)
+            -- A base item next to the player is still moved the vanilla way, before the add.
+            local pot=food(stove,"Base.PotOfStew")
+            queues[p]={queue={}}; givenBack=nil
+            ISInventoryPaneContextMenu.onAddItemInEvoRecipe(stew,pot,salt,0)
+            local q=queues[p].queue
+            assert(#q==2 and q[1].Type=="ISInventoryTransferAction" and q[1].item==pot and q[2].usedItem==salt)
+            assert(#givenBack==1 and givenBack[1]==pot)
+            -- Refused fetch: stopped before vanilla start, with the reason.
+            clientSent={}
+            local b=ISAddItemInRecipe:new(p,stew,soup,salt); queues[p]={queue={b}}
+            assert(b:waitToStart()==true)
+            C.receive("fetch",{request=lastClient("fetch").args.request,ok=false,code="missing"})
+            assert(b:waitToStart()==false)
+            b:start()
+            assert(b.forced and not b.started and p.halo=="IGUI_BSCCraft_Fetch_missing")
+            -- Vanilla's check still runs after the fetch: no soup any more, so the salt goes back.
+            clientSent={}
+            local c=ISAddItemInRecipe:new(p,stew,soup,salt); queues[p]={queue={c}}
+            assert(c:waitToStart()==true)
+            C.receive("fetch",{request=lastClient("fetch").args.request,ok=true})
+            arrive(p,salt); p.inventory:Remove(soup)
+            assert(c:waitToStart()==false)
+            c:start()
+            assert(c.forced and not c.started and ids(lastClient("return").args.items)==tostring(salt.id))
+            -- Nothing extra around: the menu is vanilla's.
+            p.x=40
+            ISInventoryPaneContextMenu.doEvorecipeMenu({},{soup},0,before,soup,vanilla)
+            assert(menus[2].recipes==before and menus[2].list==vanilla)
+        ''')
+
     def test_single_player_round_trip_uses_the_real_service(self):
         self.check('''
             local F=require "BSCCraft/Finder"
@@ -529,6 +632,7 @@ class ModTests(unittest.TestCase):
             local saw=put(remote,makeItem("Base.Saw"))
             vanillaUI({})
             ISHandcraftAction=makeHandcraftClass()
+            ISAddItemInRecipe=makeRecipeActionClass()
             H.install(); C.install()
             F.extra(p); scanAll(F)
             local recipe={needs={{type="Base.Plank",count=1},{type="Base.Saw",count=1}},getName=function() return "TestRecipe" end}
@@ -543,6 +647,26 @@ class ModTests(unittest.TestCase):
             a:perform(); assert(saw.container==p.inventory)
             a:complete()
             assert(saw.container==remote and plank.container==nil and #remote.items==1)
+            -- Evolved recipes use the ingredient in complete(), so returning earlier would hand back
+            -- an unused ingredient.
+            time=time+1000
+            local salt=food(remote,"Base.Salt"); salt.uses=3
+            local soup=food(p.inventory,"Base.PotOfSoup")
+            local b=ISAddItemInRecipe:new(p,{},soup,salt)
+            b.consume=function(self) self.usedItem.uses=self.usedItem.uses-1 end
+            queues[p]={queue={b}}
+            assert(b:isValidStart()==true and b:waitToStart()==false and salt.container==p.inventory)
+            b:start(); assert(b.started and b.startedWith==salt and salt.chef=="alice")
+            b:perform(); assert(salt.container==p.inventory and salt.uses==3)
+            b:complete(); assert(salt.uses==2 and salt.container==remote)
+            -- Used up: nothing to send back.
+            time=time+1000
+            local pepper=food(remote,"Base.Pepper")
+            local c=ISAddItemInRecipe:new(p,{},soup,pepper)
+            c.consume=function(self) p.inventory:Remove(self.usedItem) end
+            queues[p]={queue={c}}
+            assert(c:waitToStart()==false); c:start(); c:perform(); c:complete()
+            assert(pepper.container==nil and #remote.items==2)
         ''')
 
 
