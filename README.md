@@ -92,7 +92,7 @@ python -m venv .venv
 
 `check-game.py` needs a host JDK and the installed game. It runs the same tests on the game's own Kahlua and checks every Java method the mod calls against the installed jar. Simulated tests don't prove gameplay, sync or performance; see [TESTING.md](docs/TESTING.md).
 
-Artwork uses Node.js with Sharp pinned to 0.34.5: run `npm ci --ignore-scripts`, then `npm run images`. The sources are the SVGs in `tools/`. Python, Node and Sharp are development tools, not runtime dependencies.
+Artwork uses Node.js with Sharp pinned to 0.34.5: run `npm ci --ignore-scripts`, then `npm run images`. The sources are the SVGs in `tools/`. Python, Node and Sharp are development tools, not runtime dependencies. Packaging and Workshop uploads are in [WORKSHOP.md](docs/WORKSHOP.md).
 
 ## License
 
