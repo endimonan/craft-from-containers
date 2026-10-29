@@ -410,7 +410,7 @@ class ModTests(unittest.TestCase):
             ISHandcraftAction=makeHandcraftClass()
             H.install(); C.install()
             F.extra(p); scanAll(F)
-            local recipe={needs={{type="Base.Plank",count=1},{type="Base.Saw",count=1}}}
+            local recipe={needs={{type="Base.Plank",count=1},{type="Base.Saw",count=1}},getName=function() return "TestRecipe" end}
             local function newAction(manual) return ISHandcraftAction:new(p,recipe,H.extended(p),manual or false,nil) end
             local function consume(item) return function(self) p.inventory:Remove(item) end end
             local a1,a2=newAction(),newAction()
@@ -517,7 +517,7 @@ class ModTests(unittest.TestCase):
             ISHandcraftAction=makeHandcraftClass()
             H.install(); C.install()
             F.extra(p); scanAll(F)
-            local recipe={needs={{type="Base.Plank",count=1},{type="Base.Saw",count=1}}}
+            local recipe={needs={{type="Base.Plank",count=1},{type="Base.Saw",count=1}},getName=function() return "TestRecipe" end}
             local a=ISHandcraftAction:new(p,recipe,H.extended(p),false,nil)
             queues[p]={queue={a}}
             -- Single-player answers synchronously, so the action never waits.

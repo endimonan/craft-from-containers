@@ -61,7 +61,7 @@ end
 
 -- All or nothing: every entry is checked before the first item moves. Capacity is not checked:
 -- the items only pass through the inventory for the craft, like crafting next to a crate needs no
--- free space in vanilla.
+-- free space in vanilla. Returns the refusal code and the entry it applies to.
 function S.fetch(player,a)
     local entries=R.entries(a.items)
     if not entries then return "invalid" end
@@ -70,16 +70,21 @@ function S.fetch(player,a)
     local moves={}
     for _,e in ipairs(entries) do
         local square,code=S.reach(player,e,o,area)
-        if not square then return code end
+        if not square then return code,e end
         local obj,container=S.locate(square,e,true)
-        if not container then return "missing" end
+        if not container then return "missing",e end
         code=S.usable(obj,container,player)
-        if code then return code end
+        if code then return code,e end
         local item=container:getItemWithID(e.id)
-        if not item or item:getContainer()~=container then return "missing" end
+        if not item or item:getContainer()~=container then return "missing",e end
         moves[#moves+1]={item=item,from=container}
     end
     for _,m in ipairs(moves) do S.move(m.item,m.from,inventory) end
+end
+
+function S.describe(player,code,e)
+    local where=e and (" "..e.t.." at "..e.x..","..e.y..","..e.z.." item "..e.id) or ""
+    return tostring(player:getUsername()).." refused "..code..where
 end
 
 -- Best effort, item by item: anything that can't go back stays in the inventory.
@@ -121,9 +126,11 @@ function S.command(player,command,a)
     if not rate or now-rate.start>=S.window then rate={start=now,count=0}; S.limits[player]=rate end
     rate.count=rate.count+1
     if command=="fetch" then
-        local ok,code=true,"rate"
-        if rate.count<=S.perWindow then ok,code=pcall(S.fetch,player,a) end
+        local ok,code,entry=true,"rate",nil
+        if rate.count<=S.perWindow then ok,code,entry=pcall(S.fetch,player,a) end
         if not ok then G.log("fetch",code); code="error" end
+        -- Throttled per code, so a refused batch leaves one line explaining it.
+        if code then G.log("refused "..code,S.describe(player,code,entry)) end
         S.reply(player,"fetch",{request=a.request,ok=code==nil,code=code})
     else
         local ok,returned,kept=true,0,1

@@ -93,7 +93,11 @@ function C.wait(action)
         C.send(action.character,"fetch",{request=s.request,items=entries})
     end
     if s.state~="waiting" then return false end
-    if s.reply and not s.reply.ok then C.fail(s,s.reply.code or "error"); return false end
+    if s.reply and not s.reply.ok then
+        C.fail(s,s.reply.code or "error")
+        G.log("fetch "..s.code,"server refused "..#s.entries.." item(s) for "..tostring(action.craftRecipe and action.craftRecipe:getName()))
+        return false
+    end
     if s.reply and C.arrived(action.character,s.entries) then
         s.state="ready"; s.fetched=s.entries; C.pending[s.request]=nil
         return false
