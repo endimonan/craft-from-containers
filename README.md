@@ -4,6 +4,8 @@ Craft with what's in nearby containers and anywhere in your base, without haulin
 
 [Contributing](CONTRIBUTING.md) · [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md)
 
+![Craft From Containers cover](preview.png)
+
 ## How it works
 
 - **Nearby:** crafting can use explored containers up to 5 squares away (configurable), on your floor and in the same building. Outdoors counts as one "building", so it never reaches through a wall into another house.
@@ -16,6 +18,8 @@ The crafting window and item right-click crafts show recipes as craftable using 
 3. What's left of the remote items (tools, partly used items) goes back to the container it came from. Disorganized characters keep them, like vanilla.
 
 In a batch, tools stay with you until the last craft instead of going back and forth. If a craft is cancelled, what was brought over goes back.
+
+![Fetch, craft and return](docs/images/how-it-works.png)
 
 Everything else (transfers, healing, light sources, reloading, building, workstations) keeps the vanilla reach.
 
@@ -87,6 +91,8 @@ python -m venv .venv
 ~~~
 
 `check-game.py` needs a host JDK and the installed game. It runs the same tests on the game's own Kahlua and checks every Java method the mod calls against the installed jar. Simulated tests don't prove gameplay, sync or performance; see [TESTING.md](docs/TESTING.md).
+
+Artwork uses Node.js with Sharp pinned to 0.34.5: run `npm ci --ignore-scripts`, then `npm run images`. The sources are the SVGs in `tools/`. Python, Node and Sharp are development tools, not runtime dependencies.
 
 ## License
 
