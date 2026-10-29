@@ -37,3 +37,39 @@ with tempfile.TemporaryDirectory(prefix="bscc-kahlua-", dir=ROOT) as temp:
             raise SystemExit(result.returncode)
     run([javac, "-d", temp, str(ROOT / "tools/NativeLuaCheck.java")])
     run([str(game / "jre64/bin/java.exe"), "-Djava.awt.headless=true", "-cp", str(game / "projectzomboid.jar") + ";" + temp, "NativeLuaCheck", str(ROOT), temp], cwd=game)
+
+# The vanilla Lua the mod wraps or calls. A game update that renames or moves one of these turns
+# the matching part of the mod off; this names it.
+VANILLA = {
+    "client/Entity/ISUI/CraftRecipe/ISHandCraftPanel.lua": ["function ISHandCraftPanel:updateContainers("],
+    "client/Entity/ISUI/CraftRecipe/ISWidgetHandCraftControl.lua": ["function ISWidgetHandCraftControl:startHandcraft("],
+    "client/Entity/ISUI/Components/Crafting/ISCraftBenchPanel.lua": ["ISXuiSkin.build(self.xuiSkin, nil, ISHandCraftPanel,"],
+    "client/ISUI/ISCraftingUI.lua": ["function ISCraftingUI.ReturnItemsToOriginalContainer(playerObj, items)"],
+    "client/ISUI/ISInventoryPaneContextMenu.lua": [
+        "ISInventoryPaneContextMenu.getContainers = function(character)",
+        "function ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item",
+        "ISInventoryPaneContextMenu.addNewCraftingDynamicalContextMenu = function(",
+        "ISInventoryPaneContextMenu.OnNewCraft = function(",
+        "function ISInventoryPaneContextMenu.doEvorecipeMenu(context, items, player, evorecipe, baseItem, containerList)",
+        "ISInventoryPaneContextMenu.onAddItemInEvoRecipe = function(recipe, baseItem, usedItem, player)",
+    ],
+    "client/TimedActions/ISTimedActionQueue.lua": ["ISTimedActionQueue.add = function(action)"],
+    "shared/TimedActions/ISInventoryTransferUtil.lua": [
+        "function ISInventoryTransferUtil.newInventoryTransferAction(character, item, srcContainer, destContainer, time)",
+    ],
+    "shared/Entity/TimedActions/ISHandcraftAction.lua": [
+        "function ISHandcraftAction:start()", "function ISHandcraftAction:perform()", "function ISHandcraftAction:stop()",
+        "function ISHandcraftAction:new(character, craftRecipe, containers, isoObject, craftBench, manualInputs, items, recipeItem, variableInputRatio, eatPercentage)",
+    ],
+    "shared/TimedActions/ISAddItemInRecipe.lua": [
+        "function ISAddItemInRecipe:isValidStart()", "function ISAddItemInRecipe:start()",
+        "function ISAddItemInRecipe:perform()", "function ISAddItemInRecipe:stop()",
+        "function ISAddItemInRecipe:new(character, recipe, baseItem, usedItem)",
+    ],
+}
+for relative, snippets in VANILLA.items():
+    source = (game / "media/lua" / relative).read_text(encoding="utf-8", errors="replace")
+    for snippet in snippets:
+        if snippet not in source:
+            raise SystemExit(f"Vanilla Lua changed: {relative} lacks {snippet!r}")
+print(f"Vanilla Lua entry points OK ({sum(map(len, VANILLA.values()))} definitions)")
